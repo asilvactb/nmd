@@ -16,6 +16,7 @@ const ICONS = {
 
 /** Sections that don't fit the phone bar: reached through "Mais" */
 const EXTRA = [
+  { href: "/membros", label: "Membros", emoji: "👥", hint: "Todos os perfis" },
   { href: "/morfes", label: "Morfes", emoji: "🍽️", hint: "Quem leva a comida" },
   { href: "/tesouraria", label: "Tesouraria", emoji: "💶", hint: "Caixa e movimentos" },
   { href: "/hall", label: "Hall of Fame", emoji: "🏆", hint: "Medalhas e campeões" },
@@ -102,6 +103,7 @@ export function BottomNav({ isAdmin }: { isAdmin: boolean }) {
         <ul className="flex flex-col gap-1">
           {[
             ...items.map((it) => ({ href: it.href, label: it.label, icon: icon(it.icon, isActive(it.href), "h-5 w-5") })),
+            { href: "/membros", label: "Membros", icon: <span className="text-base leading-none">👥</span> },
             { href: "/morfes", label: "Morfes", icon: <span className="text-base leading-none">🍽️</span> },
             { href: "/tesouraria", label: "Tesouraria", icon: <span className="text-base leading-none">💶</span> },
             { href: "/hall", label: "Hall of Fame", icon: icon(ICONS.hall, isActive("/hall"), "h-5 w-5") },
