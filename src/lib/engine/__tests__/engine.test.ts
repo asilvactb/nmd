@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { eventPoints, placementPoints } from "../scoring";
 import { generatePairs } from "../pairing";
-import { directCrossFormat, finalPlaces, formatFor, groupFixtures, groupStandings, validateScore } from "../tournament";
+import { directCrossFormat, finalPlaces, finalsOnlyFormat, formatFor, groupFixtures, groupStandings, validateScore } from "../tournament";
 import type { Player } from "../types";
 
 // Deterministic RNG for tests
@@ -159,5 +159,19 @@ describe("tournament", () => {
   it("direct cross variant: 1st v 1st ... last v last", () => {
     const f = directCrossFormat(formatFor(8));
     expect(f.knockout.map((k) => k.places)).toEqual([[1, 2], [3, 4], [5, 6], [7, 8]]);
+  });
+
+  it("10 pairs without time: only finals, the rest share places by group position (4 Oct)", () => {
+    const f = finalsOnlyFormat(formatFor(10));
+    expect(f.knockout.map((k) => k.id)).toEqual(["F", "FB"]);
+    const groupOrder = { A: ["a1", "a2", "a3", "a4", "a5"], B: ["b1", "b2", "b3", "b4", "b5"] };
+    const places = finalPlaces(f, groupOrder, { F: { winner: "b1", loser: "a1" }, FB: { winner: "a5", loser: "b5" } });
+    expect(places.get("b1")).toBe(1);
+    expect(places.get("a2")).toBe(3);
+    expect(places.get("b2")).toBe(3);
+    expect(places.get("a4")).toBe(7);
+    expect(places.get("b5")).toBe(10);
+    const pts = placementPoints(10, [...places].map(([id, position]) => ({ players: [id, id] as [string, string], position })));
+    expect(pts[[...places.keys()].indexOf("a2")]).toBe(7.5);
   });
 });

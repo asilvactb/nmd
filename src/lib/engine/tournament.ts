@@ -29,6 +29,11 @@ export interface FormatDef {
   knockout: KnockoutMatch[];
   /** Round-robin finishes the event (no knockout): final place = group position */
   roundRobinOnly?: boolean;
+  /**
+   * Places for pairs not decided by a knockout match, by group position
+   * (pairs in the same position of different groups share the places).
+   */
+  groupPlaces?: Record<number, number>;
 }
 
 /** Round-robin order per group size, 1-based seeds, as in the spreadsheet templates. */
@@ -117,6 +122,31 @@ export const FORMATS: FormatDef[] = [
     ],
   },
 ];
+
+/**
+ * No time for semi-finals (two groups): only the final (1st A v 1st B) and the
+ * bombos final (last A v last B). Everyone else is placed by group position,
+ * sharing the places with the pair in the same position of the other group
+ * (as on 4 Oct: two pairs in 3rd/4th, two in 5th/6th, ...).
+ */
+export function finalsOnlyFormat(base: FormatDef): FormatDef {
+  const names = Object.keys(base.groups);
+  if (names.length !== 2) throw new Error("Só finais existe com 2 grupos.");
+  const [A, B] = names as [string, string];
+  const size = base.groups[A]!;
+  const groupPlaces: Record<number, number> = {};
+  for (let pos = 2; pos < size; pos++) groupPlaces[pos] = 2 * pos - 1;
+  return {
+    ...base,
+    id: `${base.id}-finals`,
+    label: `${base.label.replace(" + meias-finais", "")} + finais`,
+    knockout: [
+      { id: "F", label: "Final dos vencedores", a: g(A, 1), b: g(B, 1), places: [1, 2] },
+      { id: "FB", label: "Final dos bombos", a: g(A, size), b: g(B, size), places: [2 * size - 1, 2 * size] },
+    ],
+    groupPlaces,
+  };
+}
 
 /**
  * "Cruzamento direto" (Regulamento 3.f.i): when there is no time for semis,
@@ -276,6 +306,14 @@ export function finalPlaces(
     if (!r) continue;
     places.set(r.winner, m.places[0]);
     places.set(r.loser, m.places[1]);
+  }
+  if (format.groupPlaces) {
+    for (const [pos, place] of Object.entries(format.groupPlaces)) {
+      for (const order of Object.values(groupOrder)) {
+        const id = order[Number(pos) - 1];
+        if (id && !places.has(id)) places.set(id, place);
+      }
+    }
   }
   return places;
 }

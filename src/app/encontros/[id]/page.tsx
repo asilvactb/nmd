@@ -158,9 +158,9 @@ export default async function EncontroPage({ params }: { params: Promise<{ id: s
 
       {isAdmin && event.status !== "finished" && (
         <div className="mt-10 flex flex-col gap-2">
-          {groups.length === 2 && !format.id.endsWith("-direct") && (
+          {groups.length === 2 && !format.id.endsWith("-finals") && (
             <form action={useDirectCross.bind(null, id)}>
-              <button className={`${btnGhost} w-full`}>Sem tempo: cruzamento direto</button>
+              <button className={`${btnGhost} w-full`}>Sem tempo: passar a só finais</button>
             </form>
           )}
           <form action={closeEvent.bind(null, id)}>

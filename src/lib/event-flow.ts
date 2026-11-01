@@ -7,6 +7,7 @@ import { generatePairs, type PairingResult } from "@/lib/engine/pairing";
 import { eventPoints } from "@/lib/engine/scoring";
 import {
   directCrossFormat,
+  finalsOnlyFormat,
   finalPlaces,
   formatFor,
   groupFixtures,
@@ -24,6 +25,7 @@ const secureRng = () => randomInt(0, 2 ** 31) / 2 ** 31;
 export function eventFormat(event: Pick<EventRow, "format_id">, numPairs: number): FormatDef {
   const id = event.format_id ?? "";
   const base = formatFor(numPairs);
+  if (id.endsWith("-finals")) return finalsOnlyFormat(base);
   return id.endsWith("-direct") ? directCrossFormat(base) : base;
 }
 

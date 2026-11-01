@@ -233,11 +233,14 @@ export async function publishPairs(eventId: string) {
 export async function useDirectCross(eventId: string) {
   const { supabase } = await requireAdmin();
   const { data: ev } = await supabase.from("events").select("format_id").eq("id", eventId).single();
-  if (ev?.format_id && !ev.format_id.endsWith("-direct")) {
+  const { count: koPlayed } = await supabase.from("matches").select("id", { count: "exact", head: true })
+    .eq("event_id", eventId).eq("stage", "knockout").not("score_a", "is", null);
+  if (koPlayed) throw new Error("Já há eliminatórias jogadas.");
+  if (ev?.format_id && !ev.format_id.endsWith("-finals")) {
     // Replace the knockout matches by the direct-cross ones
     const { data: pairs } = await supabase.from("pairs").select("id").eq("event_id", eventId);
-    const { directCrossFormat, formatFor } = await import("@/lib/engine/tournament");
-    const f = directCrossFormat(formatFor(pairs!.length));
+    const { finalsOnlyFormat, formatFor } = await import("@/lib/engine/tournament");
+    const f = finalsOnlyFormat(formatFor(pairs!.length));
     await supabase.from("matches").delete().eq("event_id", eventId).eq("stage", "knockout");
     await supabase.from("matches").insert(
       f.knockout.map((k) => ({ event_id: eventId, stage: "knockout", knockout_id: k.id, label: k.label })),
