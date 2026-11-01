@@ -112,7 +112,7 @@ body {
 
 /* Infinite results ticker */
 @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-.marquee { display: flex; width: max-content; animation: marquee 57s linear infinite; /* 30% slower than 40s */ }
+.marquee { display: flex; width: max-content; animation: marquee 114s linear infinite; /* half the speed of 57s */ }
 .marquee:hover { animation-play-state: paused; }
 
 @keyframes pulse-dot {
