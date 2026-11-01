@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Logo } from "./Logo";
 
@@ -9,7 +10,16 @@ const ICONS = {
   ranking: "M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3",
   finos: "M7 4h10l-1.2 15.2A2 2 0 0 1 13.8 21h-3.6a2 2 0 0 1-2-1.8zM7.5 9h9",
   admin: "M4 6h16M4 12h16M4 18h16M8 4v4M16 10v4M10 16v4",
+  more: "M5 12h.01M12 12h.01M19 12h.01",
+  hall: "M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z",
 };
+
+/** Sections that don't fit the phone bar: reached through "Mais" */
+const EXTRA = [
+  { href: "/morfes", label: "Morfes", emoji: "🍽️", hint: "Quem leva a comida" },
+  { href: "/tesouraria", label: "Tesouraria", emoji: "💶", hint: "Caixa e movimentos" },
+  { href: "/hall", label: "Hall of Fame", emoji: "🏆", hint: "Medalhas e campeões" },
+];
 
 const ITEMS = [
   { href: "/", label: "Início", icon: ICONS.home },
@@ -20,6 +30,8 @@ const ITEMS = [
 
 export function BottomNav({ isAdmin }: { isAdmin: boolean }) {
   const path = usePathname();
+  const [more, setMore] = useState(false);
+  useEffect(() => setMore(false), [path]);
   if (path.startsWith("/login")) return null;
   const items = isAdmin ? [...ITEMS, { href: "/admin", label: "Admin", icon: ICONS.admin }] : ITEMS;
   const isActive = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
@@ -29,12 +41,32 @@ export function BottomNav({ isAdmin }: { isAdmin: boolean }) {
   );
   return (
     <>
-      {/* Phone: floating pill */}
+      {/* Phone: floating pill. Morfes, Tesouraria, Hall of Fame and Admin live under "Mais" */}
+      {more && (
+        <div className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden" onClick={() => setMore(false)}>
+          <ul className="absolute inset-x-4 flex flex-col gap-1 rounded-[28px] border border-white/10 bg-[#15171b]/95 p-2 shadow-2xl shadow-black/60"
+            style={{ bottom: "calc(env(safe-area-inset-bottom) + 88px)" }} onClick={(e) => e.stopPropagation()}>
+            {[...EXTRA, ...(isAdmin ? [{ href: "/admin", label: "Admin", emoji: "⚙️", hint: "Encontros, sorteio e jogadores" }] : [])].map((it) => (
+              <li key={it.href}>
+                <Link href={it.href}
+                  className={`flex items-center gap-3 rounded-2xl px-4 py-3 transition ${isActive(it.href) ? "bg-card-2" : "active:bg-card-2"}`}>
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-card-2 text-lg">{it.emoji}</span>
+                  <span className="flex-1">
+                    <span className="block text-[15px] font-medium">{it.label}</span>
+                    <span className="block text-xs text-muted">{it.hint}</span>
+                  </span>
+                  <span className="text-muted">→</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <nav className="fixed inset-x-0 z-30 flex justify-center px-4 lg:hidden"
         style={{ bottom: "calc(env(safe-area-inset-bottom) + 12px)" }}>
         <ul className="flex w-full max-w-md items-center justify-between rounded-full border border-white/10 bg-[#15171b]/80 p-1.5 shadow-2xl shadow-black/60 backdrop-blur-xl">
-          {items.map((it) => {
-            const active = isActive(it.href);
+          {ITEMS.map((it) => {
+            const active = isActive(it.href) && !more;
             return (
               <li key={it.href} className="flex-1">
                 <Link href={it.href}
@@ -45,6 +77,18 @@ export function BottomNav({ isAdmin }: { isAdmin: boolean }) {
               </li>
             );
           })}
+          {(() => {
+            const active = more || [...EXTRA.map((e) => e.href), "/admin"].some((h) => path.startsWith(h));
+            return (
+              <li className="flex-1">
+                <button type="button" onClick={() => setMore((m) => !m)} aria-expanded={more}
+                  className={`flex w-full flex-col items-center gap-0.5 rounded-full py-2 text-[10px] font-medium transition-colors ${active ? "bg-fg text-bg" : "text-muted"}`}>
+                  <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round"><path d={ICONS.more} /></svg>
+                  Mais
+                </button>
+              </li>
+            );
+          })()}
         </ul>
       </nav>
 
@@ -60,7 +104,7 @@ export function BottomNav({ isAdmin }: { isAdmin: boolean }) {
             ...items.map((it) => ({ href: it.href, label: it.label, icon: icon(it.icon, isActive(it.href), "h-5 w-5") })),
             { href: "/morfes", label: "Morfes", icon: <span className="text-base leading-none">🍽️</span> },
             { href: "/tesouraria", label: "Tesouraria", icon: <span className="text-base leading-none">💶</span> },
-            { href: "/hall", label: "Hall of Fame", icon: icon("M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z", isActive("/hall"), "h-5 w-5") },
+            { href: "/hall", label: "Hall of Fame", icon: icon(ICONS.hall, isActive("/hall"), "h-5 w-5") },
           ].map((it) => {
             const active = isActive(it.href);
             return (
