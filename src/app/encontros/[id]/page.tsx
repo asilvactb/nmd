@@ -87,10 +87,25 @@ export default async function EncontroPage({ params }: { params: Promise<{ id: s
       {slots.map((sl) => {
         const inSlot = matches.filter((m) => m.slot === sl).sort((a, b) => (a.court ?? 0) - (b.court ?? 0));
         const done = inSlot.every((m) => m.score_a != null);
+        // Pairs of a group that plays this jornada but have no game in it are resting
+        const slotGroups = new Set(inSlot.filter((m) => m.stage === "group").map((m) => m.group_name));
+        const busy = new Set(inSlot.flatMap((m) => [m.pair_a, m.pair_b]));
+        const resting = pairs.filter((p) => p.group_name && slotGroups.has(p.group_name) && !busy.has(p.id));
         return (
           <div key={sl}>
             <SectionTitle action={done ? <span className="text-[10px] text-muted">✓ terminada</span> : undefined}>Jornada {sl}</SectionTitle>
             <div className="grid gap-2 md:grid-cols-2 2xl:grid-cols-4">{inSlot.map((m) => card(m, tagOf(m)))}</div>
+            {resting.length > 0 && (
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-dashed border-line px-4 py-2.5 text-sm text-muted">
+                <span className="eyebrow">Descansa{resting.length > 1 ? "m" : ""}</span>
+                {resting.map((p) => (
+                  <span key={p.id} className="flex items-center gap-2">
+                    <PairAvatars a={person(p.left_player)} b={person(p.right_player)} size={22} />
+                    <span className="text-fg/80">{short(p.id)}{groups.length > 1 ? <span className="text-muted"> · Grupo {p.group_name}</span> : null}</span>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         );
       })}
