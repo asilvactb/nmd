@@ -25,7 +25,8 @@ export function medalFor(award: string): MedalDef {
   if (a.includes("3/4")) return { icon: "¾", tier: "bronze", short: "Prémio 3/4" };
   if (a.includes("bombo")) return { icon: "🥁", tier: "bronze", short: "Master Bombo" };
   if (a.includes("chef") || a.includes("michelin")) return { icon: "👨‍🍳", tier: "fun", short: "Master Chef" };
-  if (a.includes("bandalho") || a.includes("pirilampo")) return { icon: "✨", tier: "fun", short: "Pirilampo Mágico" };
+  if (a.includes("bandalho")) return { icon: "🏴‍☠️", tier: "fun", short: "Bandalho do Ano" };
+  if (a.includes("pirilampo")) return { icon: "✨", tier: "fun", short: "Pirilampo Mágico" };
   if (a.includes("careca")) return { icon: "👨‍🦲", tier: "gold", short: "Careca Dourada" };
   if (a.includes("testa de ferro")) return { icon: "🛡️", tier: "fun", short: "Testa de Ferro" };
   return { icon: "🏅", tier: "silver", short: award };
