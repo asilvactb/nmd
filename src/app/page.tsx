@@ -1,16 +1,29 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Card, Page, SectionTitle, btn, btnGhost } from "@/components/ui";
 import { Logo } from "@/components/Logo";
+import { Avatar } from "@/components/Avatar";
 import { formatDate, getCurrentSeason, getMe, type EventRow, type PlayerRow, type RankingRow } from "@/lib/db";
 import { register, setJoker, signOut, unregister } from "./actions";
 
 export default async function Home() {
   const { supabase, player } = await getMe();
   if (!player) {
+    // An admin may have registered this email on the player in the meantime
+    const { data: claimed } = await supabase.rpc("claim_by_email");
+    if (claimed) redirect("/");
+    const { data: req } = await supabase.from("signup_requests").select("status").maybeSingle();
     return (
-      <Page title="NMD">
+      <Page title="" action={<Logo className="h-7" />}>
         <Card>
-          <p>O teu email ainda não está associado a nenhum jogador. Pede a um admin para te adicionar.</p>
+          <p className="font-medium">
+            {req?.status === "rejected" ? "Pedido recusado" : "À espera de validação"}
+          </p>
+          <p className="mt-1 text-sm text-muted">
+            {req?.status === "rejected"
+              ? "Um admin recusou este registo. Fala com a administração do NMD."
+              : "Um admin do NMD tem de validar a tua conta. Volta a abrir a app depois disso."}
+          </p>
           <form action={signOut} className="mt-4"><button className={btnGhost}>Sair</button></form>
         </Card>
       </Page>
@@ -23,7 +36,7 @@ export default async function Home() {
     .order("date", { ascending: true }).limit(1).maybeSingle<EventRow>();
 
   const { data: regs } = next
-    ? await supabase.from("registrations").select("player_id, joker, players(name, side, is_wild_card)").eq("event_id", next.id)
+    ? await supabase.from("registrations").select("player_id, joker, players(name, side, is_wild_card, avatar_path)").eq("event_id", next.id)
     : { data: [] };
   const mine = regs?.find((r) => r.player_id === player.id);
 
@@ -70,10 +83,10 @@ export default async function Home() {
           {regs && regs.length > 0 && (
             <ul className="mt-4 flex flex-wrap gap-1.5 text-xs">
               {regs.map((r) => {
-                const p = r.players as unknown as Pick<PlayerRow, "name" | "side" | "is_wild_card">;
+                const p = r.players as unknown as Pick<PlayerRow, "name" | "side" | "is_wild_card" | "avatar_path">;
                 return (
-                  <li key={r.player_id} className="rounded-full border border-line px-2.5 py-1">
-                    {p.name}{p.is_wild_card ? " (wc)" : ""} <span className="text-muted">{p.side === "L" ? "E" : "D"}</span>
+                  <li key={r.player_id} className="flex items-center gap-1.5 rounded-full border border-line py-0.5 pl-0.5 pr-2.5">
+                    <Avatar name={p.name} path={p.avatar_path} size={22} />{p.name}{p.is_wild_card ? " (wc)" : ""} <span className="text-muted">{p.side === "L" ? "E" : "D"}</span>
                   </li>
                 );
               })}
@@ -91,7 +104,10 @@ export default async function Home() {
         <Stat label="Finos NMD" value={String(totalFinos)} />
       </div>
 
-      <form action={signOut} className="mt-10 text-center"><button className="text-sm text-muted">Sair</button></form>
+      <div className="mt-10 flex justify-center gap-6 text-sm text-muted">
+        <Link href="/conta">A minha conta</Link>
+        <form action={signOut}><button>Sair</button></form>
+      </div>
     </Page>
   );
 }

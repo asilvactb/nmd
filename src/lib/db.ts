@@ -11,6 +11,7 @@ export interface PlayerRow {
   is_admin: boolean;
   birth_date: string | null;
   active: boolean;
+  avatar_path: string | null;
 }
 
 export interface SeasonRow {
@@ -72,6 +73,7 @@ export interface RankingRow {
   wins: number;
   bombos: number;
   joker_used: boolean | null;
+  avatar_path: string | null;
 }
 
 export async function getMe() {

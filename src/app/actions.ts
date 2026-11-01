@@ -144,10 +144,13 @@ export async function previewPairs(eventId: string) {
   const { supabase } = await requireAdmin();
   try {
     const r = await computePairs(supabase, eventId);
+    const { data: av } = await supabase.from("players").select("id, avatar_path");
+    const path = new Map((av ?? []).map((x) => [x.id as string, x.avatar_path as string | null]));
     return {
       pairs: r.pairs.map((p) => ({
         left: p.left.name, right: p.right.name, reason: p.reason,
         leftId: p.left.id, rightId: p.right.id,
+        leftPath: path.get(p.left.id) ?? null, rightPath: path.get(p.right.id) ?? null,
       })),
       log: r.log,
       warnings: r.warnings,
@@ -205,4 +208,19 @@ export async function upsertPlayer(formData: FormData) {
   if (id) await supabase.from("players").update(row).eq("id", id);
   else await supabase.from("players").insert(row);
   revalidatePath("/admin/jogadores");
+}
+
+// ---------------------------------------------------------------- sign-up validation (admins)
+
+export async function approveSignup(userId: string) {
+  const { supabase } = await requireAdmin();
+  const { error } = await supabase.rpc("approve_signup", { req: userId });
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin");
+}
+
+export async function rejectSignup(userId: string) {
+  const { supabase } = await requireAdmin();
+  await supabase.from("signup_requests").update({ status: "rejected" }).eq("user_id", userId);
+  revalidatePath("/admin");
 }

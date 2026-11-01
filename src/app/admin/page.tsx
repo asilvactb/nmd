@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Card, Page, SectionTitle, btn, btnGhost, input } from "@/components/ui";
 import { formatDate, requireAdmin, type EventRow } from "@/lib/db";
-import { createEvent } from "../actions";
+import { Avatar } from "@/components/Avatar";
+import { approveSignup, createEvent, rejectSignup } from "../actions";
 
 function nextSunday() {
   const d = new Date();
@@ -12,8 +13,36 @@ function nextSunday() {
 export default async function AdminPage() {
   const { supabase } = await requireAdmin();
   const { data } = await supabase.from("events").select("*").neq("status", "finished").order("date");
+  const { data: requests } = await supabase
+    .from("signup_requests").select("*, players(name)").eq("status", "pending").order("created_at");
   return (
     <Page title="Admin" action={<Link href="/admin/jogadores" className={btnGhost}>Jogadores</Link>}>
+      {!!requests?.length && (
+        <>
+          <SectionTitle>Contas por validar</SectionTitle>
+          <div className="mb-6 flex flex-col gap-2">
+            {requests.map((r) => (
+              <Card key={r.user_id}>
+                <div className="flex items-center gap-3">
+                <Avatar name={r.email} path={r.avatar_path} size={56} />
+                <div>
+                <p className="font-medium">
+                  {r.player_id
+                    ? (r.players as unknown as { name: string } | null)?.name
+                    : `${r.new_name} (novo, ${r.new_side === "L" ? "esquerda" : "direita"})`}
+                </p>
+                <p className="text-sm text-muted">{r.email}</p>
+                </div>
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <form action={approveSignup.bind(null, r.user_id)}><button className={btn}>Validar</button></form>
+                  <form action={rejectSignup.bind(null, r.user_id)}><button className={btnGhost}>Recusar</button></form>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
       <Card>
         <p className="mb-3 font-medium">Abrir novo encontro</p>
         <form action={createEvent} className="flex flex-col gap-2">

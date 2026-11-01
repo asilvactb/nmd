@@ -2,6 +2,7 @@
 import { useState, useTransition } from "react";
 import { btn, btnGhost, Card } from "@/components/ui";
 import { previewPairs, publishPairs } from "../../../actions";
+import { PairAvatars } from "@/components/Avatar";
 
 type Preview = Awaited<ReturnType<typeof previewPairs>>;
 
@@ -19,8 +20,11 @@ export function PairingPanel({ eventId }: { eventId: string }) {
         <Card>
           <ol className="space-y-1.5">
             {preview.pairs.map((p, i) => (
-              <li key={i} className="flex justify-between text-sm">
-                <span>{p.left} / {p.right}</span>
+              <li key={i} className="flex items-center justify-between gap-2 text-sm">
+                <span className="flex items-center gap-2">
+                  <PairAvatars a={{ name: p.left, path: p.leftPath }} b={{ name: p.right, path: p.rightPath }} size={26} />
+                  {p.left} / {p.right}
+                </span>
                 <span className="text-xs text-muted">{p.reason}</span>
               </li>
             ))}

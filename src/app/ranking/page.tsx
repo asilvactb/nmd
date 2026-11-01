@@ -1,4 +1,6 @@
-import { Page } from "@/components/ui";
+import Link from "next/link";
+import { Page, btnGhost } from "@/components/ui";
+import { Avatar } from "@/components/Avatar";
 import { getCurrentSeason, getMe, type RankingRow } from "@/lib/db";
 
 export default async function RankingPage() {
@@ -13,7 +15,7 @@ export default async function RankingPage() {
   const ranks = rows.map((r) => rows.findIndex((x) => Number(x.points) === Number(r.points)) + 1);
 
   return (
-    <Page title="Ranking">
+    <Page title="Ranking" action={<Link href="/hall" className={btnGhost}>Hall of Fame</Link>}>
       <p className="-mt-3 mb-4 text-sm text-muted">{season?.name}</p>
       <div className="overflow-hidden rounded-2xl bg-card">
         <table className="tabular w-full text-sm">
@@ -31,10 +33,14 @@ export default async function RankingPage() {
             {rows.map((r, i) => (
               <tr key={r.player_id} className={`border-t border-line ${r.player_id === player?.id ? "font-semibold" : ""}`}>
                 <td className="py-2.5 pl-4 pr-2 text-muted">{ranks[i]}</td>
-                <td className="py-2.5">
-                  {r.name}{r.is_wild_card && <span className="text-muted"> (wc)</span>}
+                <td className="py-2">
+                  <span className="flex items-center gap-2.5">
+                  <Avatar name={r.name} path={r.avatar_path} size={30} />
+                  <span>{r.name}{r.is_wild_card && <span className="text-muted"> (wc)</span>}
                   {r.joker_used && <span title="Joker usado"> ★</span>}
                   <span className="ml-1.5 text-xs text-muted">{r.side === "L" ? "E" : "D"}</span>
+                  </span>
+                  </span>
                 </td>
                 <td className="px-1 py-2.5 text-center">{r.events_played}</td>
                 <td className="px-1 py-2.5 text-center">{r.wins}</td>

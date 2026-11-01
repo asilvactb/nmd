@@ -2,11 +2,15 @@
 import { useState, useTransition } from "react";
 import type { MatchRow } from "@/lib/db";
 import { saveScore } from "../../actions";
+import { PairAvatars } from "@/components/Avatar";
+
+type Person = { name: string; path: string | null };
 
 const LOSER_SCORES = [0, 1, 2, 3, 4, 5];
 
-export function MatchCard({ match, eventId, nameA, nameB, tag, canEdit }: {
-  match: MatchRow; eventId: string; nameA: string; nameB: string; tag?: string; canEdit: boolean;
+export function MatchCard({ match, eventId, nameA, nameB, peopleA, peopleB, tag, canEdit }: {
+  match: MatchRow; eventId: string; nameA: string; nameB: string;
+  peopleA?: [Person, Person]; peopleB?: [Person, Person]; tag?: string; canEdit: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [winner, setWinner] = useState<"a" | "b" | null>(null);
@@ -23,9 +27,12 @@ export function MatchCard({ match, eventId, nameA, nameB, tag, canEdit }: {
     });
   }
 
-  const row = (name: string, score: number | null, won: boolean) => (
-    <div className="flex items-center justify-between py-1">
-      <span className={won ? "font-semibold" : played ? "text-muted" : ""}>{name}</span>
+  const row = (name: string, score: number | null, won: boolean, people?: [Person, Person]) => (
+    <div className="flex items-center justify-between gap-3 py-1">
+      <span className={`flex min-w-0 items-center gap-2.5 ${won ? "font-semibold" : played ? "text-muted" : ""}`}>
+        {people && <PairAvatars a={people[0]} b={people[1]} size={28} />}
+        <span className="truncate">{name}</span>
+      </span>
       <span className="tabular text-lg font-semibold">{score ?? ""}</span>
     </div>
   );
@@ -34,8 +41,8 @@ export function MatchCard({ match, eventId, nameA, nameB, tag, canEdit }: {
     <div className={`rounded-2xl bg-card px-4 py-3 ${pending ? "opacity-60" : ""}`}>
       {tag && <p className="mb-1 text-[11px] uppercase tracking-wider text-muted">{tag}</p>}
       <button type="button" className="block w-full text-left" disabled={!canEdit} onClick={() => setOpen((o) => !o)}>
-        {row(nameA, match.score_a, played && match.score_a! > match.score_b!)}
-        {row(nameB, match.score_b, played && match.score_b! > match.score_a!)}
+        {row(nameA, match.score_a, played && match.score_a! > match.score_b!, peopleA)}
+        {row(nameB, match.score_b, played && match.score_b! > match.score_a!, peopleB)}
       </button>
       {open && canEdit && (
         <div className="mt-3 border-t border-line pt-3">

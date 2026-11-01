@@ -5,6 +5,7 @@ import { eventFormat, tournamentState } from "@/lib/event-flow";
 import { closeEvent, useDirectCross } from "../../actions";
 import { LiveRefresh } from "./LiveRefresh";
 import { MatchCard } from "./MatchCard";
+import { PairAvatars } from "@/components/Avatar";
 
 export default async function EncontroPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -23,6 +24,14 @@ export default async function EncontroPage({ params }: { params: Promise<{ id: s
   const pairById = new Map(pairs.map((p) => [p.id, p]));
   const name = (pid: string | null) => (pid ? pairName(pairById.get(pid), players) : "A definir");
   const isAdmin = !!player?.is_admin;
+  const person = (id: string) => {
+    const p = players.get(id);
+    return { name: p?.name ?? "?", path: p?.avatar_path ?? null };
+  };
+  const people = (pid: string | null): [ReturnType<typeof person>, ReturnType<typeof person>] | undefined => {
+    const pr = pid ? pairById.get(pid) : undefined;
+    return pr ? [person(pr.left_player), person(pr.right_player)] : undefined;
+  };
 
   if (!pairs.length) {
     return (
@@ -52,8 +61,9 @@ export default async function EncontroPage({ params }: { params: Promise<{ id: s
           <p className="text-xs uppercase tracking-wider text-muted">Classificação final</p>
           <ol className="mt-2 space-y-1">
             {[...pairs].sort((a, b) => (a.final_position ?? 99) - (b.final_position ?? 99)).map((p) => (
-              <li key={p.id} className="flex gap-3">
+              <li key={p.id} className="flex items-center gap-3">
                 <span className="tabular w-6 text-muted">{p.final_position}</span>
+                <PairAvatars a={person(p.left_player)} b={person(p.right_player)} size={26} />
                 <span>{name(p.id)}</span>
                 {p.final_position === 1 && <span>🏆</span>}
                 {p.final_position === bombosPlace && <span>🥁</span>}
@@ -71,6 +81,7 @@ export default async function EncontroPage({ params }: { params: Promise<{ id: s
               .sort((a, b) => (a.group_name ?? "").localeCompare(b.group_name ?? ""))
               .map((m) => (
                 <MatchCard key={m.id} match={m} eventId={id} nameA={name(m.pair_a)} nameB={name(m.pair_b)}
+                  peopleA={people(m.pair_a)} peopleB={people(m.pair_b)}
                   tag={groups.length > 1 ? `Grupo ${m.group_name}` : undefined} canEdit={isAdmin} />
               ))}
           </div>
@@ -88,7 +99,13 @@ export default async function EncontroPage({ params }: { params: Promise<{ id: s
               <tbody>
                 {tables[g]!.map((t, i) => (
                   <tr key={t.pairId} className="border-t border-line">
-                    <td className="py-2 pl-4"><span className="mr-2 text-muted">{i + 1}</span>{name(t.pairId)}{t.unresolvedTie && " ⚠︎"}</td>
+                    <td className="py-2 pl-4">
+                      <span className="flex items-center gap-2">
+                        <span className="w-4 text-muted">{i + 1}</span>
+                        {people(t.pairId) && <PairAvatars a={people(t.pairId)![0]} b={people(t.pairId)![1]} size={24} />}
+                        <span>{name(t.pairId)}{t.unresolvedTie && " ⚠︎"}</span>
+                      </span>
+                    </td>
                     <td className="text-center">{t.wins}</td>
                     <td className="pr-4 text-center">{t.delta > 0 ? `+${t.delta}` : t.delta}</td>
                   </tr>
@@ -105,6 +122,7 @@ export default async function EncontroPage({ params }: { params: Promise<{ id: s
           <div className="flex flex-col gap-2">
             {knockout.map((m) => (
               <MatchCard key={m.id} match={m} eventId={id} nameA={name(m.pair_a)} nameB={name(m.pair_b)}
+                peopleA={people(m.pair_a)} peopleB={people(m.pair_b)}
                 tag={m.label ?? undefined} canEdit={isAdmin && !!m.pair_a && !!m.pair_b} />
             ))}
           </div>
