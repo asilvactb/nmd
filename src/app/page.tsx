@@ -22,7 +22,9 @@ export default async function Home() {
           <p className="mt-1 text-sm text-muted">
             {req?.status === "rejected"
               ? "Um admin recusou este registo. Fala com a administração do NMD."
-              : "Um admin do NMD tem de validar a tua conta. Volta a abrir a app depois disso."}
+              : !req
+                ? "O registo ficou a meio. Sai e volta a fazer Criar conta com o mesmo email e password."
+                : "Um admin do NMD tem de validar a tua conta. Volta a abrir a app depois disso."}
           </p>
           <form action={signOut} className="mt-4"><button className={btnGhost}>Sair</button></form>
         </Card>

@@ -45,21 +45,33 @@ export default function LoginPage() {
       setBusy(false);
       if (error) return setError("Email ou password errados.");
     } else {
+      let userId: string | undefined;
       const { data, error } = await supabase.auth.signUp({ email: cleanEmail, password });
-      if (error || !data.user) {
+      if (error?.message.toLowerCase().includes("registered")) {
+        // Account exists from an unfinished sign-up: same email + password resumes it
+        const { data: signIn, error: signInError } =
+          await supabase.auth.signInWithPassword({ email: cleanEmail, password });
+        if (signInError) {
+          setBusy(false);
+          return setError("Esse email já tem conta. Usa Entrar com a tua password.");
+        }
+        userId = signIn.user.id;
+      } else if (error || !data.user) {
         setBusy(false);
-        return setError(error?.message.includes("registered") ? "Esse email já tem conta. Entra em vez de criar." : "Não foi possível criar a conta.");
+        return setError("Não foi possível criar a conta.");
+      } else {
+        userId = data.user.id;
       }
-      const avatarPath = `${data.user.id}/avatar-${Date.now()}.jpg`;
+      const avatarPath = `${userId}/avatar-${Date.now()}.jpg`;
       const { error: upError } = await supabase.storage
-        .from("avatars").upload(avatarPath, photo!, { contentType: "image/jpeg", upsert: true });
+        .from("avatars").upload(avatarPath, photo!, { contentType: "image/jpeg" });
       if (upError) {
         setBusy(false);
-        return setError("Conta criada, mas a foto falhou. Entra e tenta outra vez em Conta.");
+        return setError("A foto não foi enviada. Tenta outra vez.");
       }
       const isNew = playerId === NEW;
-      const { error: reqError } = await supabase.from("signup_requests").insert({
-        user_id: data.user.id,
+      const { error: reqError } = await supabase.from("signup_requests").upsert({
+        user_id: userId,
         email: cleanEmail,
         player_id: isNew ? null : playerId,
         new_name: isNew ? newName.trim() : null,
