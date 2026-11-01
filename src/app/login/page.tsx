@@ -92,11 +92,37 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="relative mx-auto flex min-h-[100dvh] max-w-sm flex-col justify-center overflow-hidden px-6 py-12">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[60%] overflow-hidden"><div className="aurora !opacity-70" /></div>
-      <div className="court pointer-events-none absolute inset-0 opacity-60 [mask-image:radial-gradient(circle_at_50%_30%,black,transparent_70%)]" />
-      <Logo className="rise relative mx-auto mb-4 w-44" />
-      <p className="rise eyebrow relative mb-10 text-center" style={{ "--i": 1 } as React.CSSProperties}>Nunca Mais é Domingo</p>
+    // Phone: single column. Desktop: brand panel on the left, form on the right (full screen, no nav rail)
+    <main className="relative min-h-[100dvh] overflow-hidden lg:fixed lg:inset-0 lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:overflow-y-auto">
+      {/* Brand panel (desktop) */}
+      <section className="court relative hidden overflow-hidden border-r border-line bg-card lg:flex lg:flex-col lg:justify-between lg:p-14">
+        <div className="aurora !opacity-60" />
+        <Logo className="rise relative w-32" />
+        <div className="relative">
+          <p className="rise eyebrow !text-accent" style={{ "--i": 1 } as React.CSSProperties}>Padel ao domingo · Braga</p>
+          <h1 className="rise display mt-5 text-[clamp(56px,6.2vw,104px)]" style={{ "--i": 2 } as React.CSSProperties}>
+            Nunca<br />mais é<br /><span className="text-gradient">domingo.</span>
+          </h1>
+          <ul className="rise mt-10 flex flex-wrap gap-2 text-sm text-muted" style={{ "--i": 3 } as React.CSSProperties}>
+            {["Sorteios", "Jogos ao vivo", "Ranking", "Hall of Fame", "Finos", "Morfes", "Tesouraria"].map((t) => (
+              <li key={t} className="rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5 backdrop-blur">{t}</li>
+            ))}
+          </ul>
+        </div>
+        <p className="relative text-xs text-muted">Mesh Padel Center · Braga</p>
+        <span aria-hidden className="display outline-type pointer-events-none absolute -bottom-10 -right-6 select-none text-[260px] leading-none">NMD</span>
+      </section>
+
+      {/* Form */}
+      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-sm flex-col justify-center px-6 py-12 lg:max-w-md lg:px-12">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[70%] overflow-hidden [mask-image:linear-gradient(to_bottom,black_40%,transparent)] lg:hidden"><div className="aurora !opacity-70" /></div>
+        <div className="court pointer-events-none absolute inset-0 opacity-60 [mask-image:radial-gradient(circle_at_50%_30%,black,transparent_70%)] lg:hidden" />
+        <Logo className="rise relative mx-auto mb-4 w-44 lg:hidden" />
+        <p className="rise eyebrow relative mb-10 text-center lg:hidden" style={{ "--i": 1 } as React.CSSProperties}>Nunca Mais é Domingo</p>
+        <div className="relative mb-8 hidden lg:block">
+          <h2 className="display text-[40px]">{mode === "login" ? "Bem-vindo" : "Junta-te"}</h2>
+          <p className="mt-2 text-sm text-muted">{mode === "login" ? "Entra com o teu email e password." : "Cria a tua conta — um admin valida-a."}</p>
+        </div>
 
       <div className="relative mb-4 grid grid-cols-2 rounded-full border border-line bg-card p-1 text-sm">
         {(["login", "signup"] as const).map((m) => (
@@ -141,8 +167,9 @@ export default function LoginPage() {
       </form>
       {error && <p className="mt-3 text-center text-sm text-danger">{error}</p>}
       {mode === "signup" && (
-        <p className="mt-6 text-center text-xs text-muted">A tua conta fica ativa depois de um admin a validar.</p>
+        <p className="mt-6 text-center text-xs text-muted lg:text-left">A tua conta fica ativa depois de um admin a validar.</p>
       )}
+      </div>
     </main>
   );
 }
