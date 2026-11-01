@@ -48,43 +48,34 @@ export function BottomNav({ isAdmin }: { isAdmin: boolean }) {
         </ul>
       </nav>
 
-      {/* Desktop: sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[248px] flex-col border-r border-line bg-[#0b0c0f] px-5 py-8 lg:flex">
-        <Link href="/" className="mb-10 px-2"><Logo className="h-7" /></Link>
+      {/* Desktop: icon rail that expands on hover (overlays the page, doesn't push it) */}
+      <aside className="group fixed inset-y-0 left-0 z-40 hidden w-[72px] flex-col overflow-hidden border-r border-line bg-[#0b0c0f]/95 px-3 py-6 backdrop-blur-xl transition-[width,box-shadow] duration-300 ease-out hover:w-[248px] hover:shadow-2xl hover:shadow-black/60 lg:flex">
+        <Link href="/" className="relative mb-8 flex h-10 items-center px-1.5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icons/icon-192.png" alt="NMD" className="h-9 w-9 shrink-0 rounded-xl transition-opacity duration-200 group-hover:opacity-0" />
+          <Logo className="absolute left-1.5 h-6 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+        </Link>
         <ul className="flex flex-col gap-1">
-          {items.map((it) => {
+          {[
+            ...items.map((it) => ({ href: it.href, label: it.label, icon: icon(it.icon, isActive(it.href), "h-5 w-5") })),
+            { href: "/morfes", label: "Morfes", icon: <span className="text-base leading-none">🍽️</span> },
+            { href: "/tesouraria", label: "Tesouraria", icon: <span className="text-base leading-none">💶</span> },
+            { href: "/hall", label: "Hall of Fame", icon: icon("M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z", isActive("/hall"), "h-5 w-5") },
+          ].map((it) => {
             const active = isActive(it.href);
             return (
               <li key={it.href}>
-                <Link href={it.href}
-                  className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition ${active ? "bg-card-2 text-fg" : "text-muted hover:bg-card hover:text-fg"}`}>
-                  {icon(it.icon, active, "h-5 w-5")}
-                  {it.label}
-                  {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-accent" />}
+                <Link href={it.href} title={it.label}
+                  className={`relative flex h-11 items-center gap-3 rounded-2xl px-3 text-sm font-medium transition ${active ? "bg-card-2 text-fg" : "text-muted hover:bg-card hover:text-fg"}`}>
+                  <span className="flex w-5 shrink-0 items-center justify-center">{it.icon}</span>
+                  <span className="whitespace-nowrap opacity-0 transition-opacity duration-200 group-hover:opacity-100">{it.label}</span>
+                  {active && <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-full bg-accent" />}
                 </Link>
               </li>
             );
           })}
-          <li>
-            <Link href="/morfes" className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition ${isActive("/morfes") ? "bg-card-2 text-fg" : "text-muted hover:bg-card hover:text-fg"}`}>
-              <span className="flex h-5 w-5 items-center justify-center">🍽️</span>
-              Morfes
-            </Link>
-          </li>
-          <li>
-            <Link href="/tesouraria" className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition ${isActive("/tesouraria") ? "bg-card-2 text-fg" : "text-muted hover:bg-card hover:text-fg"}`}>
-              <span className="flex h-5 w-5 items-center justify-center">💶</span>
-              Tesouraria
-            </Link>
-          </li>
-          <li>
-            <Link href="/hall" className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition ${isActive("/hall") ? "bg-card-2 text-fg" : "text-muted hover:bg-card hover:text-fg"}`}>
-              {icon("M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z", isActive("/hall"), "h-5 w-5")}
-              Hall of Fame
-            </Link>
-          </li>
         </ul>
-        <p className="mt-auto px-3 text-[11px] leading-relaxed text-muted">Nunca Mais é Domingo<br />Mesh Padel Center · Braga</p>
+        <p className="mt-auto whitespace-nowrap px-3 text-[11px] leading-relaxed text-muted opacity-0 transition-opacity group-hover:opacity-100">Nunca Mais é Domingo<br />Mesh Padel Center · Braga</p>
       </aside>
     </>
   );

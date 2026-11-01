@@ -1,11 +1,12 @@
 import type { CSSProperties, ReactNode } from "react";
 
 /** Page shell: phone-width on mobile, wide on desktop (pages opt into desktop grids with lg:). */
-export function Page({ title, eyebrow, action, wide = true, children }: {
-  title?: string; eyebrow?: string; action?: ReactNode; wide?: boolean; children: ReactNode;
+export function Page({ title, eyebrow, action, wide = true, full = false, children }: {
+  title?: string; eyebrow?: string; action?: ReactNode; wide?: boolean; full?: boolean; children: ReactNode;
 }) {
+  const width = full ? "lg:max-w-[1680px]" : wide ? "lg:max-w-6xl" : "lg:max-w-3xl";
   return (
-    <main className={`mx-auto max-w-lg px-4 pt-[calc(env(safe-area-inset-top)+20px)] lg:px-10 lg:pt-10 ${wide ? "lg:max-w-6xl" : "lg:max-w-3xl"}`}>
+    <main className={`mx-auto max-w-lg px-4 pt-[calc(env(safe-area-inset-top)+20px)] lg:px-10 lg:pt-10 ${width}`}>
       {(title || action) && (
         <header className="rise mb-6 flex items-end justify-between gap-4 lg:mb-10">
           <div>

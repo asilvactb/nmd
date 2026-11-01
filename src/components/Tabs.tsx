@@ -7,7 +7,6 @@ import { useState, type ReactNode } from "react";
  */
 export function Tabs({ tabs }: { tabs: { id: string; label: string; content: ReactNode }[] }) {
   const [active, setActive] = useState(tabs[0]?.id);
-  const cols = tabs.length === 3 ? "lg:grid-cols-3" : tabs.length === 2 ? "lg:grid-cols-2" : "";
   return (
     <div>
       <div className="sticky top-0 z-20 -mx-4 bg-bg/90 px-4 py-3 backdrop-blur-xl lg:hidden" style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}>
@@ -20,13 +19,21 @@ export function Tabs({ tabs }: { tabs: { id: string; label: string; content: Rea
           ))}
         </div>
       </div>
-      <div className={`lg:mt-8 lg:grid lg:items-start lg:gap-6 ${cols}`}>
-        {tabs.map((t) => (
+      <div className="lg:mt-8">
+        {tabs.map((t, i) => i === 0 && (
           <div key={t.id} className={`${active === t.id ? "block" : "hidden"} lg:block`}>
             <h2 className="display mb-1 hidden text-2xl lg:block">{t.label}</h2>
             {t.content}
           </div>
         ))}
+        <div className={`lg:mt-12 lg:grid lg:items-start lg:gap-8 ${tabs.length > 2 ? "lg:grid-cols-2" : ""}`}>
+          {tabs.slice(1).map((t) => (
+            <div key={t.id} className={`${active === t.id ? "block" : "hidden"} lg:block`}>
+              <h2 className="display mb-1 hidden text-2xl lg:block">{t.label}</h2>
+              {t.content}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

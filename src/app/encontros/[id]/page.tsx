@@ -90,7 +90,7 @@ export default async function EncontroPage({ params }: { params: Promise<{ id: s
         return (
           <div key={sl}>
             <SectionTitle action={done ? <span className="text-[10px] text-muted">✓ terminada</span> : undefined}>Jornada {sl}</SectionTitle>
-            <div className="flex flex-col gap-2">{inSlot.map((m) => card(m, tagOf(m)))}</div>
+            <div className="grid gap-2 md:grid-cols-2 2xl:grid-cols-4">{inSlot.map((m) => card(m, tagOf(m)))}</div>
           </div>
         );
       })}
@@ -135,14 +135,14 @@ export default async function EncontroPage({ params }: { params: Promise<{ id: s
   );
 
   const finais = (
-    <div className="flex flex-col gap-2 pt-4">
+    <div className="grid gap-2 pt-4 md:grid-cols-2">
       {knockout.map((m) => card(m, m.label ?? undefined))}
       {!knockout.length && <p className="text-muted">Este formato não tem eliminatórias.</p>}
     </div>
   );
 
   return (
-    <Page>
+    <Page full>
       <LiveRefresh eventId={id} />
       {header}
       <div className="rise mb-2 flex items-center gap-3 text-sm text-muted" style={{ "--i": 1 } as CSSProperties}>

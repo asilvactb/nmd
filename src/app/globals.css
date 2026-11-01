@@ -44,7 +44,7 @@ body {
   overscroll-behavior-y: none;
 }
 @media (min-width: 1024px) {
-  body { padding-bottom: 48px; padding-left: 248px; }
+  body { padding-bottom: 48px; padding-left: 72px; }
 }
 ::selection { background: var(--accent); color: #fff; }
 
