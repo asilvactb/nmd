@@ -1,7 +1,9 @@
 "use client";
 import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { matchPlayer, parseList } from "@/lib/whatsapp-list";
 import { Avatar } from "@/components/Avatar";
-import { adminDrawSides, adminQuickPlayer, adminSetSide } from "../../../actions";
+import { adminDrawSides, adminImportList, adminQuickPlayer, adminSetSide } from "../../../actions";
 
 type P = { id: string; name: string; side: "L" | "R"; avatar_path: string | null; is_wild_card: boolean };
 type Side = "L" | "R";
@@ -31,7 +33,9 @@ export function SidePicker({ eventId, players: initialPlayers, initial, points, 
   const [q, setQ] = useState("");
   const [paste, setPaste] = useState("");
   const [pasteOpen, setPasteOpen] = useState(false);
-  const [unmatched, setUnmatched] = useState<string[]>([]);
+  const [unmatched, setUnmatched] = useState<{ text: string; wc: boolean; options: P[] }[]>([]);
+  const [pasteNote, setPasteNote] = useState<string | null>(null);
+  const router = useRouter();
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState("");
   const [newSide, setNewSide] = useState<Side>("L");
@@ -48,27 +52,46 @@ export function SidePicker({ eventId, players: initialPlayers, initial, points, 
     start(() => adminSetSide(eventId, id, side));
   }
 
-  // Match pasted WhatsApp lines ("1. Moura", "- Zé Vieira 🎾") to players
+  // WhatsApp list: "🎾 Moura🏆/Christophe🏆🤡", "🎾 T. Lourenço", "🎾 Figueiredo (wc)"
   function addFromPaste() {
-    const index = new Map<string, P[]>();
-    const push = (k: string, p: P) => index.set(k, [...(index.get(k) ?? []), p]);
-    for (const p of players) {
-      push(norm(p.name), p);
-      const first = norm(p.name).split(" ")[0]!;
-      if (first !== norm(p.name)) push(first, p);
-    }
-    const missed: string[] = [];
-    for (const raw of paste.split(/\n|,/)) {
-      const line = norm(raw.replace(/^\s*(\d+[.)-]?|[-•*])\s*/, ""));
-      if (!line) continue;
-      const hit = index.get(line);
-      if (hit?.length === 1) {
-        if (!sel[hit[0]!.id]) put(hit[0]!.id, hit[0]!.side);
-      } else missed.push(raw.trim());
+    const lines = parseList(paste);
+    const entries: { playerId: string; side: Side; joker: boolean }[] = [];
+    const fixedPairs: { a: string; b: string; reason: "winners" | "bombos" }[] = [];
+    const missed: { text: string; wc: boolean; options: P[] }[] = [];
+    for (const line of lines) {
+      const ids: (string | null)[] = [];
+      for (const n of line.names) {
+        const m = matchPlayer(n.text, players);
+        if (m && "player" in m) {
+          ids.push(m.player.id);
+          if (!entries.some((e) => e.playerId === m.player.id)) entries.push({ playerId: m.player.id, side: sel[m.player.id] ?? m.player.side, joker: n.joker });
+        } else {
+          ids.push(null);
+          missed.push({ text: n.text, wc: n.wildCard, options: m && "ambiguous" in m ? m.ambiguous : [] });
+        }
+      }
+      if (line.reason && ids[0] && ids[1]) fixedPairs.push({ a: ids[0], b: ids[1], reason: line.reason });
     }
     setUnmatched(missed);
     setPaste("");
     if (!missed.length) setPasteOpen(false);
+    if (!entries.length) return;
+    start(async () => {
+      const r = await adminImportList(eventId, entries, fixedPairs);
+      if (r.error) return setMsg(r.error);
+      setSel((s) => ({ ...s, ...r.sides }));
+      const parts = [`${entries.length} jogadores adicionados`];
+      if (fixedPairs.length) parts.push(`${fixedPairs.length} dupla${fixedPairs.length > 1 ? "s" : ""} fixa${fixedPairs.length > 1 ? "s" : ""}`);
+      const jokers = entries.filter((e) => e.joker).length - r.notes.length;
+      if (jokers > 0) parts.push(`${jokers} Joker 🤡`);
+      setPasteNote([parts.join(" · "), ...r.notes].join(". "));
+      router.refresh();
+    });
+  }
+
+  function pickOption(u: { text: string }, p: P) {
+    put(p.id, p.side);
+    setUnmatched((list) => list.filter((x) => x !== u));
   }
 
   function createPlayer() {
@@ -78,7 +101,7 @@ export function SidePicker({ eventId, players: initialPlayers, initial, points, 
       if (r.error || !r.player) return setMsg(r.error);
       setPlayers((ps) => [...ps, r.player!]);
       setSel((s) => ({ ...s, [r.player!.id]: newSide }));
-      setUnmatched((u) => u.filter((x) => norm(x) !== norm(newName)));
+      setUnmatched((u) => u.filter((x) => norm(x.text) !== norm(newName)));
       setNewName(""); setAdding(false); setMsg(null);
     });
   }
@@ -198,7 +221,7 @@ export function SidePicker({ eventId, players: initialPlayers, initial, points, 
         {pasteOpen && (
           <div className="mt-3">
             <textarea value={paste} onChange={(e) => setPaste(e.target.value)} rows={6}
-              placeholder={"1. Moura\n2. Zé Vieira\n3. Caniço…"}
+              placeholder={"🎾 Moura🏆/Christophe🏆🤡\n🎾 Taipas🥁\n🎾 T. Lourenço\n🎾 Figueiredo (wc)…"}
               className="w-full rounded-2xl border border-line bg-bg px-3 py-2.5 text-sm outline-none focus:border-accent" />
             <button onClick={addFromPaste} disabled={!paste.trim()}
               className="mt-2 w-full rounded-full bg-fg py-3 text-sm font-semibold text-bg disabled:opacity-40">
@@ -206,15 +229,25 @@ export function SidePicker({ eventId, players: initialPlayers, initial, points, 
             </button>
           </div>
         )}
+        {pasteNote && <p className="mt-3 text-sm text-accent">✓ {pasteNote}</p>}
         {!!unmatched.length && (
-          <div className="mt-3 text-sm">
-            <p className="text-muted">Não encontrei (toca para criar):</p>
-            <div className="mt-1.5 flex flex-wrap gap-1.5">
-              {unmatched.map((u) => (
-                <button key={u} onClick={() => { setNewName(u); setAdding(true); }}
-                  className="rounded-full border border-dashed border-line px-3 py-1 text-xs">+ {u}</button>
-              ))}
-            </div>
+          <div className="mt-3 flex flex-col gap-2 text-sm">
+            <p className="text-muted">Não consegui identificar:</p>
+            {unmatched.map((u) => (
+              <div key={u.text} className="flex flex-wrap items-center gap-1.5">
+                {u.options.length ? (
+                  <>
+                    <span className="text-xs">{u.text} é</span>
+                    {u.options.map((p) => (
+                      <button key={p.id} onClick={() => pickOption(u, p)} className="rounded-full border border-line bg-card-2 px-3 py-1 text-xs">{p.name}</button>
+                    ))}
+                  </>
+                ) : (
+                  <button onClick={() => { setNewName(u.text); setNewWc(u.wc); setAdding(true); }}
+                    className="rounded-full border border-dashed border-line px-3 py-1 text-xs">+ Criar {u.text}{u.wc ? " (WC)" : ""}</button>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>

@@ -255,6 +255,41 @@ export async function adminQuickPlayer(eventId: string, name: string, side: "L" 
 }
 
 /** After the draw: mark who played the Joker (once per season). */
+/**
+ * WhatsApp list in one go: registers everyone on their side, records the fixed pairs
+ * (the second player goes to the other side when both play the same one) and the Jokers.
+ */
+export async function adminImportList(
+  eventId: string,
+  entries: { playerId: string; side: "L" | "R"; joker: boolean }[],
+  fixedPairs: { a: string; b: string; reason: "winners" | "bombos" }[],
+) {
+  const { supabase } = await requireAdmin();
+  const side = new Map(entries.map((e) => [e.playerId, e.side]));
+  for (const fp of fixedPairs) {
+    if (side.get(fp.a) === side.get(fp.b)) side.set(fp.b, side.get(fp.a) === "L" ? "R" : "L");
+  }
+  const rows = [...side].map(([player_id, s]) => ({ event_id: eventId, player_id, side: s }));
+  if (rows.length) {
+    const { error } = await supabase.from("registrations").upsert(rows);
+    if (error) return { error: "Não foi possível inscrever os jogadores.", sides: {}, notes: [] as string[] };
+  }
+
+  const notes: string[] = [];
+  if (fixedPairs.length) {
+    const { data: existing } = await supabase.from("fixed_pair_requests").select("player_a, player_b").eq("event_id", eventId);
+    const has = (a: string, b: string) => (existing ?? []).some((x) => (x.player_a === a && x.player_b === b) || (x.player_a === b && x.player_b === a));
+    const fresh = fixedPairs.filter((fp) => !has(fp.a, fp.b)).map((fp) => ({ event_id: eventId, player_a: fp.a, player_b: fp.b, reason: fp.reason }));
+    if (fresh.length) await supabase.from("fixed_pair_requests").insert(fresh);
+  }
+  for (const e of entries.filter((x) => x.joker)) {
+    const r = await adminSetJoker(eventId, e.playerId, true);
+    if (r.error) notes.push(r.error);
+  }
+  revalidatePath(`/admin/encontros/${eventId}`);
+  return { error: null, sides: Object.fromEntries(side) as Record<string, "L" | "R">, notes };
+}
+
 export async function adminSetJoker(eventId: string, playerId: string, on: boolean) {
   const { supabase } = await requireAdmin();
   const { data: ev } = await supabase.from("events").select("season_id, status").eq("id", eventId).single();
