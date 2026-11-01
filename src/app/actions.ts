@@ -67,6 +67,39 @@ export async function removeFino() {
   revalidatePath("/");
 }
 
+// ---------------------------------------------------------------- morfes
+
+const MORFES_PER_SUNDAY = 2;
+
+export async function volunteerMorfes(eventId: string) {
+  const { supabase, player } = await getMe();
+  if (!player) return { error: "Sem jogador associado." };
+  const { count } = await supabase.from("repasto").select("player_id", { count: "exact", head: true }).eq("event_id", eventId);
+  if ((count ?? 0) >= MORFES_PER_SUNDAY) return { error: "Já há 2 voluntários para este domingo." };
+  const { error } = await supabase.from("repasto").insert({ event_id: eventId, player_id: player.id });
+  revalidatePath("/morfes");
+  revalidatePath("/");
+  return { error: error ? "Não foi possível." : null };
+}
+
+export async function leaveMorfes(eventId: string) {
+  const { supabase, player } = await getMe();
+  if (!player) return;
+  await supabase.from("repasto").delete().eq("event_id", eventId).eq("player_id", player.id);
+  revalidatePath("/morfes");
+  revalidatePath("/");
+}
+
+export async function adminSetMorfes(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const eventId = String(formData.get("event_id"));
+  const playerId = String(formData.get("player_id"));
+  if (formData.get("remove")) await supabase.from("repasto").delete().eq("event_id", eventId).eq("player_id", playerId);
+  else if (playerId) await supabase.from("repasto").upsert({ event_id: eventId, player_id: playerId });
+  revalidatePath("/morfes");
+  revalidatePath("/");
+}
+
 export async function signOut() {
   const { supabase } = await getMe();
   await supabase.auth.signOut();

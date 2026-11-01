@@ -63,6 +63,10 @@ export default async function Home() {
     : { data: [] };
   const called = (regs ?? []).map((r) => byId.get(r.player_id)).filter((p): p is Mini => !!p);
   const amCalled = called.some((p) => p.id === player.id);
+  const { data: morfesRows } = next
+    ? await supabase.from("repasto").select("player_id").eq("event_id", next.id)
+    : { data: [] };
+  const morfes = (morfesRows ?? []).map((r) => byId.get(r.player_id)).filter((p): p is Mini => !!p);
 
   const rows = (ranking ?? []) as RankingRow[];
   const myIdx = rows.findIndex((r) => r.player_id === player.id);
@@ -170,6 +174,21 @@ export default async function Home() {
             <Stat i={4} label="Pontos" value={me ? Number(me.points) : 0} decimals={me && Number(me.points) % 1 ? 1 : 0} />
             <Stat i={5} label="Presenças" value={me?.events_played ?? 0} />
           </div>
+
+          {next && (
+            <Link href="/morfes" className="rise lift flex items-center gap-3 rounded-3xl border border-line bg-card p-4" style={{ "--i": 6 } as CSSProperties}>
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-card-2 text-xl">🍽️</span>
+              <div className="min-w-0 flex-1">
+                <p className="eyebrow !text-[10px]">Morfes deste domingo</p>
+                <p className="truncate text-sm font-semibold">
+                  {morfes.length ? morfes.map((p) => p.name).join(" + ") : "Ninguém ainda — voluntaria-te"}
+                  {morfes.length === 1 && <span className="font-normal text-muted"> · falta 1</span>}
+                </p>
+              </div>
+              <span className="flex -space-x-2">{morfes.map((p) => <Avatar key={p.id} name={p.name} path={p.avatar_path} size={30} />)}</span>
+              <span className="text-muted">→</span>
+            </Link>
+          )}
         </div>
       </div>
 

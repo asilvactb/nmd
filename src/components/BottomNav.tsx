@@ -66,6 +66,12 @@ export function BottomNav({ isAdmin }: { isAdmin: boolean }) {
             );
           })}
           <li>
+            <Link href="/morfes" className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition ${isActive("/morfes") ? "bg-card-2 text-fg" : "text-muted hover:bg-card hover:text-fg"}`}>
+              <span className="flex h-5 w-5 items-center justify-center">🍽️</span>
+              Morfes
+            </Link>
+          </li>
+          <li>
             <Link href="/hall" className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition ${isActive("/hall") ? "bg-card-2 text-fg" : "text-muted hover:bg-card hover:text-fg"}`}>
               {icon("M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z", isActive("/hall"), "h-5 w-5")}
               Hall of Fame
