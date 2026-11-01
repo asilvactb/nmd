@@ -63,11 +63,20 @@ export default async function EncontroPage({ params }: { params: Promise<{ id: s
   const { tables } = tournamentState(format, pairs, matches);
   const groups = Object.keys(format.groups);
   const rounds = [...new Set(matches.filter((m) => m.stage === "group").map((m) => m.round!))].sort((a, b) => a - b);
-  const knockout = format.knockout
-    .map((k) => matches.find((m) => m.knockout_id === k.id))
-    .filter((m): m is MatchRow => !!m);
+  const optionalIds = new Set(format.knockout.filter((k) => k.optional).map((k) => k.id));
+  const isOptional = (m: MatchRow) => !!m.knockout_id && optionalIds.has(m.knockout_id);
+  // An optional game (3rd/4th) that was not played is simply skipped once the encounter is closed
+  if (event.status === "finished") {
+    for (let i = matches.length - 1; i >= 0; i--) if (isOptional(matches[i]!) && matches[i]!.score_a == null) matches.splice(i, 1);
+  }
+  const formatOrder = new Map(format.knockout.map((k, i) => [k.id, i]));
+  // Older encounters may have classification games no longer in the format: keep showing them
+  const knockout = matches
+    .filter((m) => m.stage === "knockout")
+    .sort((a, b) => (formatOrder.get(a.knockout_id ?? "") ?? 99) - (formatOrder.get(b.knockout_id ?? "") ?? 99) || (a.slot ?? 0) - (b.slot ?? 0));
   const played = matches.filter((m) => m.score_a != null).length;
-  const allPlayed = played === matches.length;
+  const required = matches.filter((m) => !isOptional(m) || m.score_a != null);
+  const allPlayed = required.every((m) => m.score_a != null);
   const bombosPlace = pairs.length;
   const finalOrder = [...pairs].sort((a, b) => (a.final_position ?? 99) - (b.final_position ?? 99));
 
@@ -81,6 +90,7 @@ export default async function EncontroPage({ params }: { params: Promise<{ id: s
   const tagOf = (m: MatchRow) => [
     m.court ? `Campo ${m.court}` : null,
     m.stage === "group" ? (groups.length > 1 ? `Grupo ${m.group_name}` : null) : m.label,
+    isOptional(m) ? "opcional" : null,
   ].filter(Boolean).join(" · ") || undefined;
   const jogos = slots.length ? (
     <div>
@@ -151,7 +161,7 @@ export default async function EncontroPage({ params }: { params: Promise<{ id: s
 
   const finais = (
     <div className="grid gap-2 pt-4 md:grid-cols-2">
-      {knockout.map((m) => card(m, m.label ?? undefined))}
+      {knockout.map((m) => card(m, [m.label, isOptional(m) ? "opcional" : null].filter(Boolean).join(" · ") || undefined))}
       {!knockout.length && <p className="text-muted">Este formato não tem eliminatórias.</p>}
     </div>
   );
@@ -163,9 +173,9 @@ export default async function EncontroPage({ params }: { params: Promise<{ id: s
       <div className="rise mb-2 flex items-center gap-3 text-sm text-muted" style={{ "--i": 1 } as CSSProperties}>
         <span>{format.label}</span>
         <span className="h-1 flex-1 overflow-hidden rounded-full bg-card-2">
-          <span className="block h-full rounded-full bg-accent transition-all" style={{ width: `${(played / matches.length) * 100}%` }} />
+          <span className="block h-full rounded-full bg-accent transition-all" style={{ width: `${(played / required.length) * 100}%` }} />
         </span>
-        <span className="tabular">{played}/{matches.length}</span>
+        <span className="tabular">{played}/{required.length}</span>
       </div>
 
       {event.status === "finished" && (
