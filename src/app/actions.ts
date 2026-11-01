@@ -55,6 +55,18 @@ export async function addFinos() {
   revalidatePath("/");
 }
 
+/** Undo: removes the player's own most recent fino. */
+export async function removeFino() {
+  const { supabase, player } = await getMe();
+  if (!player) throw new Error("Sem jogador associado.");
+  const { data: lastFino } = await supabase
+    .from("finos").select("id").eq("player_id", player.id)
+    .order("created_at", { ascending: false }).limit(1).maybeSingle();
+  if (lastFino) await supabase.from("finos").delete().eq("id", lastFino.id);
+  revalidatePath("/finos");
+  revalidatePath("/");
+}
+
 export async function signOut() {
   const { supabase } = await getMe();
   await supabase.auth.signOut();

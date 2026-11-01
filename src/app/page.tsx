@@ -62,6 +62,7 @@ export default async function Home() {
   const myIdx = rows.findIndex((r) => r.player_id === player.id);
   const me = rows[myIdx];
   const totalFinos = (finos ?? []).reduce((s, f) => s + f.quantity, 0);
+  const myFinos = (finos ?? []).filter((f) => f.player_id === player.id).reduce((s, f) => s + f.quantity, 0);
 
   // Last Sunday: champions and bombos
   let champions: [Mini, Mini] | null = null;
@@ -141,7 +142,7 @@ export default async function Home() {
         <Link href="/finos" className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.14em] opacity-70">
           <span>Finos bebidos pelo NMD</span><span>→</span>
         </Link>
-        <div className="mt-2"><FinoPlus total={totalFinos} /></div>
+        <div className="mt-2"><FinoPlus total={totalFinos} mine={myFinos} /></div>
       </section>
 
       {/* My season */}

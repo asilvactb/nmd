@@ -7,9 +7,10 @@ import { formatDate, getMe } from "@/lib/db";
 const LITRES_PER_FINO = 0.2;
 
 export default async function FinosPage() {
-  const { supabase } = await getMe();
-  const { data: finos } = await supabase.from("finos").select("quantity, events(date)");
+  const { supabase, player } = await getMe();
+  const { data: finos } = await supabase.from("finos").select("player_id, quantity, events(date)");
   const total = (finos ?? []).reduce((s, f) => s + f.quantity, 0);
+  const mine = (finos ?? []).filter((f) => f.player_id === player?.id).reduce((s, f) => s + f.quantity, 0);
   const litres = total * LITRES_PER_FINO;
   const milestone = Math.max(100, Math.ceil((litres + 0.01) / 100) * 100);
   const fill = Math.min(100, (litres / milestone) * 100);
@@ -30,10 +31,10 @@ export default async function FinosPage() {
         </div>
         <div className="relative">
           <p className="eyebrow">Total do grupo · próximo marco {milestone} L</p>
-          <div className="mt-3"><FinoPlus total={total} variant="hero" /></div>
+          <div className="mt-3"><FinoPlus total={total} mine={mine} variant="hero" /></div>
         </div>
       </section>
-      <p className="mt-3 text-center text-xs text-muted">Cada um carrega no +1 por cada fino que bebe.</p>
+      <p className="mt-3 text-center text-xs text-muted">Cada um carrega no +1 por cada fino que bebe. Enganaste-te? O −1 retira o teu último.</p>
 
       <SectionTitle>Por domingo</SectionTitle>
       <ol className="flex flex-col gap-1.5">

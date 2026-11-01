@@ -1,43 +1,53 @@
 "use client";
 import { useOptimistic, useState, useTransition } from "react";
-import { addFinos } from "@/app/actions";
+import { addFinos, removeFino } from "@/app/actions";
 import { CountUp } from "./CountUp";
 
-/** Global finos total with a "+1" that each player taps for their own fino. */
-export function FinoPlus({ total, variant = "card" }: { total: number; variant?: "card" | "hero" }) {
-  const [count, add] = useOptimistic(total, (c, n: number) => c + n);
+/** Global finos total; each player taps +1 for their own fino and −1 to undo their last one. */
+export function FinoPlus({ total, mine, variant = "card" }: {
+  total: number; mine: number; variant?: "card" | "hero";
+}) {
+  const [state, change] = useOptimistic({ total, mine }, (s, n: number) => ({ total: s.total + n, mine: s.mine + n }));
   const [, start] = useTransition();
   const [bump, setBump] = useState(0);
   const [first, setFirst] = useState(true);
 
-  function plusOne() {
+  function apply(n: 1 | -1) {
+    if (n === -1 && state.mine <= 0) return;
     setFirst(false);
     setBump((b) => b + 1);
-    navigator.vibrate?.(15);
+    navigator.vibrate?.(n === 1 ? 15 : [10, 40, 10]);
     start(async () => {
-      add(1);
-      await addFinos();
+      change(n);
+      await (n === 1 ? addFinos() : removeFino());
     });
   }
 
-  const big = variant === "hero" ? "text-[88px]" : "text-6xl";
+  const hero = variant === "hero";
   return (
     <div className="flex items-end justify-between gap-4">
       <div>
-        <span key={bump} className={`display-num block leading-none ${big} ${first ? "" : "pop"}`}>
-          {first ? <CountUp value={count} /> : count.toLocaleString("pt-PT")}
+        <span key={bump} className={`display-num block leading-none ${hero ? "text-[88px]" : "text-6xl"} ${first ? "" : "pop"}`}>
+          {first ? <CountUp value={state.total} /> : state.total.toLocaleString("pt-PT")}
         </span>
         <span className="mt-2 block text-sm font-semibold opacity-80">
-          {(count * 0.2).toLocaleString("pt-PT", { maximumFractionDigits: 1 })} litros
+          {(state.total * 0.2).toLocaleString("pt-PT", { maximumFractionDigits: 1 })} litros · {state.mine} teus
         </span>
       </div>
-      <button onClick={plusOne} aria-label="Mais um fino"
-        className={`display flex shrink-0 items-center justify-center rounded-full text-xl transition active:scale-90 ${
-          variant === "hero"
-            ? "h-[84px] w-[84px] bg-accent text-accent-ink shadow-[0_0_40px_rgb(214_255_61_/_0.35)]"
-            : "h-16 w-16 bg-accent-ink text-accent"}`}>
-        +1
-      </button>
+      <div className="flex items-center gap-2">
+        <button onClick={() => apply(-1)} disabled={state.mine <= 0} aria-label="Retirar o meu último fino"
+          className={`flex h-11 w-11 items-center justify-center rounded-full text-lg font-semibold transition active:scale-90 disabled:opacity-30 ${
+            hero ? "border border-line bg-card-2 text-fg" : "border border-accent-ink/25 text-accent-ink"}`}>
+          −1
+        </button>
+        <button onClick={() => apply(1)} aria-label="Mais um fino"
+          className={`display flex shrink-0 items-center justify-center rounded-full text-xl transition active:scale-90 ${
+            hero
+              ? "h-[84px] w-[84px] bg-accent text-accent-ink shadow-[0_0_40px_rgb(214_255_61_/_0.35)]"
+              : "h-16 w-16 bg-accent-ink text-accent"}`}>
+          +1
+        </button>
+      </div>
     </div>
   );
 }
