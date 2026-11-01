@@ -12,6 +12,7 @@ export interface PlayerRow {
   birth_date: string | null;
   active: boolean;
   avatar_path: string | null;
+  side_confirmed: boolean;
 }
 
 export interface SeasonRow {

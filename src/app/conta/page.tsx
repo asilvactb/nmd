@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Page, SectionTitle, btn, input } from "@/components/ui";
 import { PhotoPicker } from "@/components/PhotoPicker";
 import { squareJpeg } from "@/lib/image";
+import { SideSetting } from "./SideSetting";
 
 export default function ContaPage() {
   const [password, setPassword] = useState("");
@@ -50,6 +51,9 @@ export default function ContaPage() {
     <Page title="A minha conta" wide={false}>
       <PhotoPicker preview={preview} onPick={changePhoto} />
       {photoState && <p className="mt-2 text-center text-sm text-muted">{photoState}</p>}
+      <SectionTitle>Lado</SectionTitle>
+      <SideSetting />
+
       <SectionTitle>Mudar password</SectionTitle>
       {state === "done" ? (
         <p>Password alterada.</p>

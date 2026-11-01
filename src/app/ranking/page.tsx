@@ -11,17 +11,27 @@ function ranks(points: number[]) {
   return points.map((p) => points.findIndex((x) => x === p) + 1);
 }
 
-export default async function RankingPage() {
+const FILTERS = [
+  { key: "", label: "Todos" },
+  { key: "direitas", label: "Direitas", side: "R" },
+  { key: "esquerdas", label: "Esquerdas", side: "L" },
+] as const;
+
+export default async function RankingPage({ searchParams }: { searchParams: Promise<{ lado?: string }> }) {
+  const { lado = "" } = await searchParams;
+  const filter = FILTERS.find((f) => f.key === lado) ?? FILTERS[0];
+  const sideOf = "side" in filter ? filter.side : null;
   const { supabase, player } = await getMe();
   const season = await getCurrentSeason();
   if (!season) return <Page title="Ranking"><p className="text-muted">Sem temporada ativa.</p></Page>;
 
   const [{ data }, { data: pts }] = await Promise.all([
     supabase.from("season_ranking").select("*").eq("season_id", season.id).order("points", { ascending: false }),
-    supabase.from("event_points").select("player_id, points, events!inner(date, season_id, status)")
-      .eq("events.season_id", season.id).eq("events.status", "finished"),
+    supabase.from("event_points").select("player_id, points, events!inner(date, season_id, status, counts_for_ranking)")
+      .eq("events.season_id", season.id).eq("events.status", "finished").eq("events.counts_for_ranking", true),
   ]);
-  const rows = (data ?? []) as RankingRow[];
+  const rows = ((data ?? []) as RankingRow[]).filter((r) => !sideOf || r.side === sideOf);
+  const inView = new Set(rows.map((r) => r.player_id));
   const { data: awardRows } = await supabase.from("awards").select("player_id, award").not("player_id", "is", null);
   const medals = new Map<string, string[]>();
   for (const w of awardRows ?? []) medals.set(w.player_id as string, [...(medals.get(w.player_id as string) ?? []), w.award as string]);
@@ -32,7 +42,7 @@ export default async function RankingPage() {
   const lastDate = dates.at(-1);
   const before = new Map<string, number>();
   for (const p of pts ?? []) {
-    if ((p.events as unknown as { date: string }).date === lastDate) continue;
+    if ((p.events as unknown as { date: string }).date === lastDate || !inView.has(p.player_id)) continue;
     before.set(p.player_id, (before.get(p.player_id) ?? 0) + Number(p.points));
   }
   const prevOrder = [...before.entries()].sort((a, b) => b[1] - a[1]);
@@ -43,6 +53,14 @@ export default async function RankingPage() {
 
   return (
     <Page eyebrow={season.name} title="Ranking" action={<Link href="/hall" className={btnGhost}>Hall of Fame</Link>}>
+      <nav className="rise mb-6 flex w-fit rounded-full border border-line bg-card p-1">
+        {FILTERS.map((f) => (
+          <Link key={f.key} href={f.key ? `/ranking?lado=${f.key}` : "/ranking"} scroll={false}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition ${filter.key === f.key ? "bg-fg text-bg" : "text-muted hover:text-fg"}`}>
+            {f.label}
+          </Link>
+        ))}
+      </nav>
       <div className="lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-10">
       {podium.length === 3 && (
         <div className="mb-8 grid grid-cols-3 items-end gap-2 lg:sticky lg:top-10 lg:rounded-[28px] lg:border lg:border-line lg:bg-card lg:p-6 lg:pt-12">

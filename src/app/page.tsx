@@ -117,6 +117,13 @@ export default async function Home() {
         </Link>
       </header>
 
+      {!player.side_confirmed && (
+        <Link href="/conta" className="rise mb-3 flex items-center gap-3 rounded-3xl border border-accent/50 bg-accent/10 p-4">
+          <span className="text-xl">↔️</span>
+          <span className="flex-1 text-sm"><b>Confirma de que lado jogas</b><br /><span className="text-muted">Esquerda ou direita — é usado no sorteio e no ranking.</span></span>
+          <span className="text-muted">→</span>
+        </Link>
+      )}
       <div className="grid gap-3 lg:grid-cols-12 lg:gap-5">
         {/* Hero: next encounter */}
         <section className="rise relative overflow-hidden rounded-[28px] border border-line bg-card p-6 lg:col-span-7 lg:p-9"

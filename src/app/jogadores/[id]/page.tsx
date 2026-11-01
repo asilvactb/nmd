@@ -74,7 +74,7 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
                 {[...grouped.entries()].map(([k, seasons]) => <Medal key={k} award={k} size={46} count={seasons.length} />)}
               </div>
             )}
-            {me?.id === p.id && <Link href="/conta" className="mt-5 inline-block text-xs text-muted underline-offset-4 hover:underline">Editar foto e password</Link>}
+            {me?.id === p.id && <Link href="/conta" className="mt-5 inline-block text-xs text-muted underline-offset-4 hover:underline">Editar foto, lado e password</Link>}
           </div>
         </section>
 

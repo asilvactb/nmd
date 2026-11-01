@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Logo } from "@/components/Logo";
 import { btn, input } from "@/components/ui";
 import { PhotoPicker } from "@/components/PhotoPicker";
+import { SidePick } from "@/components/SidePick";
 import { squareJpeg } from "@/lib/image";
 
 const NEW = "__new__";
@@ -17,7 +18,7 @@ export default function LoginPage() {
   const [players, setPlayers] = useState<{ id: string; name: string }[]>([]);
   const [playerId, setPlayerId] = useState("");
   const [newName, setNewName] = useState("");
-  const [newSide, setNewSide] = useState<"L" | "R">("L");
+  const [newSide, setNewSide] = useState<"L" | "R" | null>(null);
   const [photo, setPhoto] = useState<Blob | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -39,6 +40,10 @@ export default function LoginPage() {
     if (mode === "signup" && !photo) {
       setBusy(false);
       return setError("Escolhe uma foto tua.");
+    }
+    if (mode === "signup" && !newSide) {
+      setBusy(false);
+      return setError("Escolhe de que lado jogas.");
     }
     if (mode === "login") {
       const { error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
@@ -75,7 +80,7 @@ export default function LoginPage() {
         email: cleanEmail,
         player_id: isNew ? null : playerId,
         new_name: isNew ? newName.trim() : null,
-        new_side: isNew ? newSide : null,
+        new_side: newSide,
         avatar_path: avatarPath,
       });
       setBusy(false);
@@ -124,14 +129,9 @@ export default function LoginPage() {
               <option value={NEW}>Sou novo — não estou na lista</option>
             </select>
             {playerId === NEW && (
-              <div className="grid grid-cols-2 gap-2">
-                <input className={input} placeholder="Nome" required value={newName} onChange={(e) => setNewName(e.target.value)} />
-                <select className={input} value={newSide} onChange={(e) => setNewSide(e.target.value as "L" | "R")}>
-                  <option value="L">Esquerda</option>
-                  <option value="R">Direita</option>
-                </select>
-              </div>
+              <input className={input} placeholder="O teu nome" required value={newName} onChange={(e) => setNewName(e.target.value)} />
             )}
+            <SidePick value={newSide} onChange={setNewSide} />
           </>
         )}
 
