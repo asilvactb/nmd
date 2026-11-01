@@ -151,10 +151,11 @@ export async function saveScore(matchId: string, eventId: string, a: number, b: 
   const { supabase, player } = await requireAdmin();
   const err = validateScore({ a, b });
   if (err) return { error: err };
-  await supabase
+  const { error } = await supabase
     .from("matches")
     .update({ score_a: a, score_b: b, updated_by: player.id, updated_at: new Date().toISOString() })
     .eq("id", matchId);
+  if (error) return { error: "Não foi possível guardar o resultado." };
   await advanceKnockout(supabase, eventId);
   revalidatePath(`/encontros/${eventId}`);
   return { error: null };

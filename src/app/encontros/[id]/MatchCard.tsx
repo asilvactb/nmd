@@ -5,7 +5,8 @@ import { saveScore } from "../../actions";
 import { PairAvatars } from "@/components/Avatar";
 
 type Person = { name: string; path: string | null };
-const LOSER_SCORES = [0, 1, 2, 3, 4, 5];
+/** One set starting 1-1, tie-break at 5-5: the loser ends on 1-5 (6-5 = tie-break). */
+const LOSER_SCORES = [1, 2, 3, 4, 5];
 
 export function MatchCard({ match, eventId, nameA, nameB, peopleA, peopleB, tag, canEdit }: {
   match: MatchRow; eventId: string; nameA: string; nameB: string;
@@ -22,7 +23,7 @@ export function MatchCard({ match, eventId, nameA, nameB, peopleA, peopleB, tag,
   function submit(loser: number) {
     const [a, b] = winner === "a" ? [6, loser] : [loser, 6];
     start(async () => {
-      const r = await saveScore(match.id, eventId, a, b);
+      const r = await saveScore(match.id, eventId, a, b).catch(() => ({ error: "Não foi possível guardar. Tenta outra vez." }));
       if (r.error) setError(r.error);
       else { setOpen(false); setWinner(null); setError(null); }
     });
@@ -40,8 +41,14 @@ export function MatchCard({ match, eventId, nameA, nameB, peopleA, peopleB, tag,
     <div className={`rise rounded-3xl border bg-card px-4 py-3 transition ${open ? "border-accent/60" : "border-line"} ${pending ? "opacity-60" : ""}`}>
       <div className="mb-1 flex items-center justify-between">
         {tag ? <p className="eyebrow !text-[10px]">{tag}</p> : <span />}
-        {!played && !tbd && canEdit && <span className="text-[10px] font-semibold uppercase tracking-wider text-accent">Lançar</span>}
-        {played && <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">Final</span>}
+        {!tbd && canEdit && (
+          <button type="button" onClick={() => setOpen((o) => !o)}
+            className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wider transition active:scale-95 ${
+              open ? "bg-card-2 text-muted" : played ? "border border-line text-muted hover:text-fg" : "bg-accent text-white"}`}>
+            {open ? "Fechar" : played ? "Corrigir" : "Lançar resultado"}
+          </button>
+        )}
+        {played && !canEdit && <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">Final</span>}
       </div>
       <button type="button" className="block w-full text-left" disabled={!canEdit || tbd} onClick={() => setOpen((o) => !o)}>
         {side(nameA, peopleA, match.score_a, aWon)}
@@ -57,10 +64,10 @@ export function MatchCard({ match, eventId, nameA, nameB, peopleA, peopleB, tag,
             </div>
           ) : (
             <div>
-              <p className="eyebrow mb-2">6 – ? · 6-5 = tie-break</p>
-              <div className="grid grid-cols-6 gap-1.5">
+              <p className="eyebrow mb-2">Jogos de quem perdeu · começa 1-1 · 6-5 = tie-break</p>
+              <div className="grid grid-cols-5 gap-1.5">
                 {LOSER_SCORES.map((n) => (
-                  <button key={n} className="display-num rounded-2xl bg-card-2 py-3 text-2xl active:scale-95 active:bg-accent active:text-accent-ink" onClick={() => submit(n)}>{n}</button>
+                  <button key={n} className="display-num rounded-2xl bg-card-2 py-3 text-2xl active:scale-95 active:bg-accent active:text-accent-ink" onClick={() => submit(n)}>6–{n}{n === 5 && <span className="block text-[9px] font-sans font-medium text-muted">TB</span>}</button>
                 ))}
               </div>
               <button className="mt-2 text-xs text-muted" onClick={() => setWinner(null)}>← voltar</button>

@@ -110,6 +110,8 @@ export default async function EncontroPage({ params }: { params: Promise<{ id: s
     </div>
   );
 
+  // Tie warnings only make sense once every game of the group has been played
+  const groupDone = (g: string) => matches.filter((m) => m.stage === "group" && m.group_name === g).every((m) => m.score_a != null);
   const grupos = (
     <div>
       {groups.map((g) => (
@@ -120,7 +122,7 @@ export default async function EncontroPage({ params }: { params: Promise<{ id: s
               <div key={t.pairId} className="flex items-center gap-3 border-t border-line px-4 py-3 first:border-t-0">
                 <span className={`display-num w-5 text-lg ${i === 0 ? "text-accent" : "text-muted"}`}>{i + 1}</span>
                 {people(t.pairId) && <PairAvatars a={people(t.pairId)![0]} b={people(t.pairId)![1]} size={30} />}
-                <span className="min-w-0 flex-1 truncate text-sm font-medium">{short(t.pairId)}{t.unresolvedTie && " ⚠︎"}</span>
+                <span className="min-w-0 flex-1 truncate text-sm font-medium">{short(t.pairId)}{t.unresolvedTie && groupDone(g) && <span title="Empate por desfazer (idade)"> ⚠︎</span>}</span>
                 <span className="display-num w-6 text-center text-lg">{t.wins}</span>
                 <span className="w-9 text-right text-sm text-muted tabular">{t.delta > 0 ? `+${t.delta}` : t.delta}</span>
               </div>

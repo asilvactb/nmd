@@ -179,7 +179,7 @@ export function formatFor(numPairs: number): FormatDef {
 
 // ---------------------------------------------------------------- scores
 
-/** One set starting 1-1, tie-break at 5-5 (recorded 6-5), golden point. */
+/** One set starting 1-1, tie-break at 5-5 (recorded 6-5), golden point. 0 is kept valid for late-arrival penalties and old results. */
 export function validateScore(s: Score): string | null {
   const hi = Math.max(s.a, s.b);
   const lo = Math.min(s.a, s.b);
