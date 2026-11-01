@@ -15,13 +15,18 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
   const { supabase, player: me } = await getMe();
   const season = await getCurrentSeason();
 
-  const [{ data: p }, { data: awardsData }, { data: pairsData }, { data: people }, { data: ranking }, { data: pts }] = await Promise.all([
+  const [{ data: p }, { data: awardsData }, { data: pairsData }, { data: people }, { data: ranking }, { data: pts }, { count: morfes }] = await Promise.all([
     supabase.from("players").select("*").eq("id", id).maybeSingle<PlayerRow>(),
     supabase.from("awards").select("season_name, award").eq("player_id", id),
     supabase.from("pairs").select("*, events!inner(id, date, status, counts_for_ranking)").eq("events.counts_for_ranking", true).or(`left_player.eq.${id},right_player.eq.${id}`),
     supabase.from("players").select("id, name, avatar_path"),
     season ? supabase.from("season_ranking").select("*").eq("season_id", season.id).order("points", { ascending: false }) : Promise.resolve({ data: [] }),
     supabase.from("event_points").select("event_id, points, joker").eq("player_id", id),
+    // Sundays this season the player brought the food (real encounters only)
+    season
+      ? supabase.from("repasto").select("event_id, events!inner(season_id, counts_for_ranking)", { count: "exact", head: true })
+          .eq("player_id", id).eq("events.season_id", season.id).eq("events.counts_for_ranking", true)
+      : Promise.resolve({ count: 0 }),
   ]);
   if (!p) notFound();
 
@@ -81,13 +86,14 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
         <div>
           {/* Season numbers */}
           <SectionTitle>{season?.name}</SectionTitle>
-          <div className="grid grid-cols-3 gap-2 lg:grid-cols-5">
+          <div className="grid grid-cols-3 gap-2 lg:grid-cols-6">
             {[
               ["Posição", mine ? idx + 1 : 0, mine ? "º" : ""],
               ["Pontos", mine ? Number(mine.points) : 0, ""],
               ["Presenças", mine?.events_played ?? 0, ""],
               ["Vitórias", mine?.wins ?? 0, ""],
               ["Bombos", mine?.bombos ?? 0, ""],
+              ["Morfes 🍽️", morfes ?? 0, ""],
             ].map(([label, value, suffix], i) => (
               <div key={label as string} className="rise rounded-2xl border border-line bg-card p-4" style={{ "--i": i + 1 } as CSSProperties}>
                 <p className="eyebrow !text-[10px]">{label}</p>
@@ -97,7 +103,7 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
                 </p>
               </div>
             ))}
-            <div className="rise col-span-3 rounded-2xl border border-line bg-card p-4 lg:col-span-5" style={{ "--i": 6 } as CSSProperties}>
+            <div className="rise col-span-3 rounded-2xl border border-line bg-card p-4 lg:col-span-6" style={{ "--i": 7 } as CSSProperties}>
               <p className="eyebrow !text-[10px]">Joker</p>
               <p className="mt-1 text-sm">{mine?.joker_used ? "🤡 Já usado esta temporada" : "Ainda por usar esta temporada"}</p>
             </div>
