@@ -18,13 +18,6 @@ export interface KnockoutMatch {
   b: SlotRef;
   /** Final places decided by this match: [winnerPlace, loserPlace] */
   places?: [number, number];
-  /**
-   * Shared places for pairs that stop here (no classification game after it):
-   * e.g. semi-final losers share 3rd/4th unless the optional 3rd/4th game is played.
-   */
-  shared?: { winner?: number; loser?: number };
-  /** Played only when there is time; the encounter can close without it. */
-  optional?: boolean;
 }
 
 export interface FormatDef {
@@ -74,21 +67,20 @@ const l = (match: string): SlotRef => ({ match, take: "loser" });
 export const FORMATS: FormatDef[] = [
   { id: "rr4", numPairs: 4, label: "Todos contra todos (4 duplas)", groups: { A: 4 }, knockout: [], roundRobinOnly: true },
   { id: "rr6", numPairs: 6, label: "Todos contra todos (6 duplas)", groups: { A: 6 }, knockout: [], roundRobinOnly: true },
-  // Knockouts as played on Sundays: semi-finals + final for the winners and for the bombos.
-  // 3rd/4th is optional; everyone else shares places (points split, Regulamento 6).
   {
     id: "g8",
     numPairs: 8,
     label: "2 grupos de 4 + meias-finais",
     groups: { A: 4, B: 4 },
     knockout: [
-      { id: "MF1", label: "Meia-final vencedores 1", a: g("A", 1), b: g("B", 2), shared: { loser: 3 } },
-      { id: "MF2", label: "Meia-final vencedores 2", a: g("B", 1), b: g("A", 2), shared: { loser: 3 } },
-      { id: "MB1", label: "Meia-final bombos 1", a: g("A", 3), b: g("B", 4), shared: { winner: 5 } },
-      { id: "MB2", label: "Meia-final bombos 2", a: g("B", 3), b: g("A", 4), shared: { winner: 5 } },
+      { id: "MF1", label: "Meia-final vencedores 1", a: g("A", 1), b: g("B", 2) },
+      { id: "MF2", label: "Meia-final vencedores 2", a: g("B", 1), b: g("A", 2) },
+      { id: "MB1", label: "Meia-final bombos 1", a: g("A", 3), b: g("B", 4) },
+      { id: "MB2", label: "Meia-final bombos 2", a: g("B", 3), b: g("A", 4) },
       { id: "F", label: "Final dos vencedores", a: w("MF1"), b: w("MF2"), places: [1, 2] },
+      { id: "P3", label: "3.º e 4.º lugar", a: l("MF1"), b: l("MF2"), places: [3, 4] },
+      { id: "P5", label: "5.º e 6.º lugar", a: w("MB1"), b: w("MB2"), places: [5, 6] },
       { id: "FB", label: "Final dos bombos", a: l("MB1"), b: l("MB2"), places: [7, 8] },
-      { id: "P3", label: "3.º e 4.º lugar", a: l("MF1"), b: l("MF2"), places: [3, 4], optional: true },
     ],
   },
   {
@@ -97,15 +89,17 @@ export const FORMATS: FormatDef[] = [
     label: "2 grupos de 5 + meias-finais",
     groups: { A: 5, B: 5 },
     knockout: [
-      { id: "MF1", label: "Meia-final vencedores 1", a: g("A", 1), b: g("B", 2), shared: { loser: 3 } },
-      { id: "MF2", label: "Meia-final vencedores 2", a: g("B", 1), b: g("A", 2), shared: { loser: 3 } },
-      { id: "MB1", label: "Meia-final bombos 1", a: g("A", 4), b: g("B", 5), shared: { winner: 7 } },
-      { id: "MB2", label: "Meia-final bombos 2", a: g("B", 4), b: g("A", 5), shared: { winner: 7 } },
+      // Regulamento 3.f.ii: 3rd places play their classification game right after the groups
+      { id: "P5", label: "5.º e 6.º lugar", a: g("A", 3), b: g("B", 3), places: [5, 6] },
+      { id: "MF1", label: "Meia-final vencedores 1", a: g("A", 1), b: g("B", 2) },
+      { id: "MF2", label: "Meia-final vencedores 2", a: g("B", 1), b: g("A", 2) },
+      { id: "MB1", label: "Meia-final bombos 1", a: g("A", 4), b: g("B", 5) },
+      { id: "MB2", label: "Meia-final bombos 2", a: g("B", 4), b: g("A", 5) },
       { id: "F", label: "Final dos vencedores", a: w("MF1"), b: w("MF2"), places: [1, 2] },
+      { id: "P3", label: "3.º e 4.º lugar", a: l("MF1"), b: l("MF2"), places: [3, 4] },
+      { id: "P7", label: "7.º e 8.º lugar", a: w("MB1"), b: w("MB2"), places: [7, 8] },
       { id: "FB", label: "Final dos bombos", a: l("MB1"), b: l("MB2"), places: [9, 10] },
-      { id: "P3", label: "3.º e 4.º lugar", a: l("MF1"), b: l("MF2"), places: [3, 4], optional: true },
     ],
-    groupPlaces: { 3: 5 }, // both 3rd places share 5th/6th
   },
   {
     id: "g12",
@@ -113,15 +107,19 @@ export const FORMATS: FormatDef[] = [
     label: "4 grupos de 3 + meias-finais",
     groups: { A: 3, B: 3, C: 3, D: 3 },
     knockout: [
-      { id: "MF1", label: "Meia-final vencedores 1", a: g("A", 1), b: g("B", 1), shared: { loser: 3 } },
-      { id: "MF2", label: "Meia-final vencedores 2", a: g("C", 1), b: g("D", 1), shared: { loser: 3 } },
-      { id: "MB1", label: "Meia-final bombos 1", a: g("A", 3), b: g("B", 3), shared: { winner: 9 } },
-      { id: "MB2", label: "Meia-final bombos 2", a: g("C", 3), b: g("D", 3), shared: { winner: 9 } },
-      { id: "F", label: "Final dos vencedores", a: w("MF1"), b: w("MF2"), places: [1, 2] },
+      { id: "MF1", label: "Meia-final 1", a: g("A", 1), b: g("B", 1) },
+      { id: "MF2", label: "Meia-final 2", a: g("C", 1), b: g("D", 1) },
+      { id: "M5a", label: "Atribuição 5.º-8.º (1)", a: g("A", 2), b: g("B", 2) },
+      { id: "M5b", label: "Atribuição 5.º-8.º (2)", a: g("C", 2), b: g("D", 2) },
+      { id: "MB1", label: "Meia-final bombos 1", a: g("A", 3), b: g("B", 3) },
+      { id: "MB2", label: "Meia-final bombos 2", a: g("C", 3), b: g("D", 3) },
+      { id: "F", label: "Final NMD", a: w("MF1"), b: w("MF2"), places: [1, 2] },
+      { id: "P3", label: "3.º e 4.º lugar", a: l("MF1"), b: l("MF2"), places: [3, 4] },
+      { id: "P5", label: "5.º e 6.º lugar", a: w("M5a"), b: w("M5b"), places: [5, 6] },
+      { id: "P7", label: "7.º e 8.º lugar", a: l("M5a"), b: l("M5b"), places: [7, 8] },
+      { id: "P9", label: "9.º e 10.º lugar", a: w("MB1"), b: w("MB2"), places: [9, 10] },
       { id: "FB", label: "Final dos bombos", a: l("MB1"), b: l("MB2"), places: [11, 12] },
-      { id: "P3", label: "3.º e 4.º lugar", a: l("MF1"), b: l("MF2"), places: [3, 4], optional: true },
     ],
-    groupPlaces: { 2: 5 }, // the four 2nd places share 5th-8th
   },
 ];
 
@@ -308,12 +306,6 @@ export function finalPlaces(
     if (!r) continue;
     places.set(r.winner, m.places[0]);
     places.set(r.loser, m.places[1]);
-  }
-  for (const m of format.knockout) {
-    const r = knockoutResults[m.id];
-    if (!r || !m.shared) continue;
-    if (m.shared.winner && !places.has(r.winner)) places.set(r.winner, m.shared.winner);
-    if (m.shared.loser && !places.has(r.loser)) places.set(r.loser, m.shared.loser);
   }
   if (format.groupPlaces) {
     for (const [pos, place] of Object.entries(format.groupPlaces)) {

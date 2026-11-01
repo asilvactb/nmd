@@ -141,27 +141,19 @@ describe("tournament", () => {
     expect(table[0]).toMatchObject({ wins: 4, delta: 11 });
   });
 
-  it("10 pairs: semis + finals for winners and bombos, the rest share places", () => {
+  it("10 pairs: knockout gives every place 1..10", () => {
     const f = formatFor(10);
-    expect(f.knockout.map((k) => k.id)).toEqual(["MF1", "MF2", "MB1", "MB2", "F", "FB", "P3"]);
     const groupOrder = { A: ["a1", "a2", "a3", "a4", "a5"], B: ["b1", "b2", "b3", "b4", "b5"] };
     const ko = {
+      P5: { winner: "a3", loser: "b3" },
       MF1: { winner: "a1", loser: "b2" }, MF2: { winner: "b1", loser: "a2" },
       MB1: { winner: "a4", loser: "b5" }, MB2: { winner: "b4", loser: "a5" },
-      F: { winner: "a1", loser: "b1" }, FB: { winner: "b5", loser: "a5" },
+      F: { winner: "a1", loser: "b1" }, P3: { winner: "b2", loser: "a2" },
+      P7: { winner: "a4", loser: "b4" }, FB: { winner: "b5", loser: "a5" },
     };
     const places = finalPlaces(f, groupOrder, ko);
-    expect(places.size).toBe(10);
-    expect([places.get("a1"), places.get("b1")]).toEqual([1, 2]);
-    expect([places.get("a2"), places.get("b2")]).toEqual([3, 3]); // no 3rd/4th game
-    expect([places.get("a3"), places.get("b3")]).toEqual([5, 5]);
-    expect([places.get("a4"), places.get("b4")]).toEqual([7, 7]);
-    expect([places.get("b5"), places.get("a5")]).toEqual([9, 10]);
-    const pts = placementPoints(10, [...places].map(([id, position]) => ({ players: [id, id] as [string, string], position })));
-    expect(pts[[...places.keys()].indexOf("a2")]).toBe(7.5);
-    // With the optional 3rd/4th game
-    const withP3 = finalPlaces(f, groupOrder, { ...ko, P3: { winner: "b2", loser: "a2" } });
-    expect([withP3.get("b2"), withP3.get("a2")]).toEqual([3, 4]);
+    expect([...places.values()].sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(places.get("a5")).toBe(10); // bombos
   });
 
   it("direct cross variant: 1st v 1st ... last v last", () => {
