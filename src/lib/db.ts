@@ -9,6 +9,8 @@ export interface PlayerRow {
   side: Side;
   is_wild_card: boolean;
   is_admin: boolean;
+  /** Honorary title, e.g. "Presidente" */
+  title?: string | null;
   birth_date: string | null;
   active: boolean;
   avatar_path: string | null;

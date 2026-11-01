@@ -67,10 +67,18 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
         <section className="rise relative overflow-hidden rounded-[28px] border border-line bg-card p-6 text-center lg:sticky lg:top-10">
           <div className="aurora" />
           <div className="relative">
-            <div className="mx-auto w-fit rounded-full p-1" style={{ background: "conic-gradient(from 180deg, var(--accent), var(--accent-2), var(--accent))" }}>
+            <div className="relative mx-auto w-fit rounded-full p-1" style={{ background: p.title
+              ? "conic-gradient(from 180deg, #f8e08e, #b07d24, #f8e08e, #b07d24, #f8e08e)"
+              : "conic-gradient(from 180deg, var(--accent), var(--accent-2), var(--accent))" }}>
               <Avatar name={p.name} path={p.avatar_path} size={124} />
+              {p.title && <span className="absolute -top-5 left-1/2 -translate-x-1/2 -rotate-12 text-[34px] drop-shadow-lg">👑</span>}
             </div>
             <h1 className="display mt-5 text-[38px]">{p.name}</h1>
+            {p.title && (
+              <p className="shine mx-auto mt-2 w-fit rounded-full border border-[#f8e08e]/40 bg-[#f8e08e]/10 px-3.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#f8e08e]">
+                {p.title} do NMD
+              </p>
+            )}
             <p className="mt-1 text-sm text-muted">
               {p.side === "L" ? "Esquerda" : "Direita"}{p.is_wild_card ? " · Wild card" : ""}{p.is_admin ? " · Admin" : ""}
             </p>
