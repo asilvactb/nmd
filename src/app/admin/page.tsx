@@ -44,7 +44,7 @@ export default async function AdminPage() {
         </>
       )}
       <Card>
-        <p className="mb-3 font-medium">Abrir novo encontro</p>
+        <p className="eyebrow mb-3">Novo encontro</p>
         <form action={createEvent} className="flex flex-col gap-2">
           <input className={input} type="date" name="date" defaultValue={nextSunday()} required />
           <div className="grid grid-cols-2 gap-2">
@@ -57,7 +57,7 @@ export default async function AdminPage() {
               {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n} campo{n > 1 ? "s" : ""}</option>)}
             </select>
           </div>
-          <button className={btn}>Abrir inscrições</button>
+          <button className={btn}>Criar encontro e preparar sorteio</button>
         </form>
       </Card>
 

@@ -115,6 +115,48 @@ export async function adminRegister(eventId: string, playerId: string, on: boole
   revalidatePath(`/admin/encontros/${eventId}`);
 }
 
+/** Draw setup: put a player on the left/right for this Sunday, or take them out (null). */
+export async function adminSetSide(eventId: string, playerId: string, side: "L" | "R" | null) {
+  const { supabase } = await requireAdmin();
+  if (side) await supabase.from("registrations").upsert({ event_id: eventId, player_id: playerId, side });
+  else await supabase.from("registrations").delete().eq("event_id", eventId).eq("player_id", playerId);
+  revalidatePath(`/admin/encontros/${eventId}`);
+}
+
+/** Draw setup: create a new player (or wild card) on the spot and put them in this Sunday. */
+export async function adminQuickPlayer(eventId: string, name: string, side: "L" | "R", isWildCard: boolean) {
+  const { supabase } = await requireAdmin();
+  const { data, error } = await supabase
+    .from("players").insert({ name: name.trim(), side, is_wild_card: isWildCard })
+    .select("id, name, side, avatar_path, is_wild_card").single();
+  if (error || !data) return { error: error?.message.includes("duplicate") ? "Já existe um jogador com esse nome." : "Não foi possível criar.", player: null };
+  await supabase.from("registrations").upsert({ event_id: eventId, player_id: data.id, side });
+  revalidatePath(`/admin/encontros/${eventId}`);
+  return { error: null, player: data as { id: string; name: string; side: "L" | "R"; avatar_path: string | null; is_wild_card: boolean } };
+}
+
+/** After the draw: mark who played the Joker (once per season). */
+export async function adminSetJoker(eventId: string, playerId: string, on: boolean) {
+  const { supabase } = await requireAdmin();
+  const { data: ev } = await supabase.from("events").select("season_id, status").eq("id", eventId).single();
+  if (ev?.status === "finished") return { error: "O encontro já foi fechado." };
+  if (on) {
+    const { count } = await supabase
+      .from("registrations")
+      .select("event_id, events!inner(season_id)", { count: "exact", head: true })
+      .eq("player_id", playerId).eq("joker", true)
+      .eq("events.season_id", ev!.season_id).neq("event_id", eventId);
+    const { count: imported } = await supabase
+      .from("event_points")
+      .select("event_id, events!inner(season_id)", { count: "exact", head: true })
+      .eq("player_id", playerId).eq("joker", true).eq("events.season_id", ev!.season_id);
+    if ((count ?? 0) + (imported ?? 0) > 0) return { error: "Este jogador já usou o Joker esta temporada." };
+  }
+  await supabase.from("registrations").update({ joker: on }).eq("event_id", eventId).eq("player_id", playerId);
+  revalidatePath(`/admin/encontros/${eventId}`);
+  return { error: null };
+}
+
 export async function adminSetRegistrationFlag(
   eventId: string,
   playerId: string,

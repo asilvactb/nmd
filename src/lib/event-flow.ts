@@ -73,9 +73,13 @@ export async function computePairs(db: SupabaseClient, eventId: string): Promise
   const event = await loadEvent(db, eventId);
   const { data: regs } = await db
     .from("registrations")
-    .select("volunteer_switch, players(*)")
+    .select("side, volunteer_switch, players(*)")
     .eq("event_id", eventId);
-  const registered = (regs ?? []).map((r) => r.players as unknown as PlayerRow);
+  // The side picked by the admin for this Sunday wins over the player's usual side
+  const registered = (regs ?? []).map((r) => {
+    const p = r.players as unknown as PlayerRow;
+    return { ...p, side: (r.side as PlayerRow["side"] | null) ?? p.side };
+  });
   const str = await strengths(db, event);
 
   // First encounter of the season is always a draw (Regulamento 5.c)

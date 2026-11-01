@@ -11,7 +11,7 @@ import {
   formatDate, getCurrentSeason, getMe,
   type EventRow, type PairRow, type PlayerRow, type RankingRow,
 } from "@/lib/db";
-import { register, setJoker, signOut, unregister } from "./actions";
+import { signOut } from "./actions";
 
 type Mini = Pick<PlayerRow, "id" | "name" | "side" | "is_wild_card" | "avatar_path">;
 
@@ -51,6 +51,19 @@ export default async function Home() {
       : Promise.resolve({ data: [] }),
     supabase.from("finos").select("player_id, quantity"),
   ]);
+  const [{ data: awards }, { data: allPlayers }] = await Promise.all([
+    supabase.from("awards").select("season_name, award, winner"),
+    supabase.from("players").select("name, avatar_path"),
+  ]);
+  // Hall of Fame teaser: the latest season's awards
+  const seasonOrder = (n: string) => Number(n.match(/\d{4}/)?.[0] ?? 0) + (/inverno/i.test(n) ? 0.5 : 0);
+  const lastAwardSeason = [...new Set((awards ?? []).map((a) => a.season_name as string))].sort((a, b) => seasonOrder(b) - seasonOrder(a))[0];
+  const hall = (awards ?? []).filter((a) => a.season_name === lastAwardSeason).slice(0, 4);
+  const normName = (x: string) => x.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  const photoOf = (w: string) => {
+    const n = normName(w);
+    return (allPlayers ?? []).find((p) => normName(p.name) === n || n.startsWith(normName(p.name) + " ") || n.endsWith(" " + normName(p.name)))?.avatar_path ?? null;
+  };
 
   const { data: regs } = next
     ? await supabase.from("registrations").select("player_id, joker, players(id, name, side, is_wild_card, avatar_path)").eq("event_id", next.id)
@@ -107,34 +120,23 @@ export default async function Home() {
                 </span>
               )}
             </div>
-            <p className="text-sm text-muted"><span className="display-num text-xl text-fg">{registered.length}</span> inscritos</p>
+            <p className="text-sm text-muted"><span className="display-num text-xl text-fg">{registered.length}</span> convocados</p>
           </div>
 
           {next.status === "registration" ? (
-            <div className="mt-6 flex gap-2">
-              {mine ? (
-                <>
-                  <form action={unregister.bind(null, next.id)} className="flex-1">
-                    <button className={`${btnGhost} w-full !py-3.5`}>✓ Estou dentro</button>
-                  </form>
-                  <form action={setJoker.bind(null, next.id, !mine.joker)}>
-                    <button className={mine.joker ? `${btn} !px-5` : `${btnGhost} !py-3.5`}>{mine.joker ? "★ Joker" : "Joker"}</button>
-                  </form>
-                </>
-              ) : (
-                <form action={register.bind(null, next.id)} className="flex-1">
-                  <button className={`${btn} w-full`}>Inscrever-me</button>
-                </form>
-              )}
-            </div>
+            <p className="mt-6 rounded-2xl border border-line bg-bg/60 px-4 py-3 text-sm text-muted">
+              {registered.length
+                ? mine ? "✓ Estás convocado. As duplas saem em breve." : "As duplas saem em breve."
+                : "Inscrições no grupo do WhatsApp."}
+            </p>
           ) : (
             <Link href={`/encontros/${next.id}`} className={`${btn} mt-6 w-full`}>
-              {next.status === "live" && <span className="live-dot !bg-accent-ink" />} Ver jogos
+              {next.status === "live" && <span className="live-dot !bg-accent-ink" />} Ver jogos e duplas
             </Link>
           )}
         </section>
       ) : (
-        <Card i={1}><p className="display text-2xl">Sem encontro marcado</p><p className="mt-2 text-sm text-muted">Os admins abrem as inscrições durante a semana.</p></Card>
+        <Card i={1}><p className="display text-2xl">Sem encontro marcado</p><p className="mt-2 text-sm text-muted">As inscrições são no grupo do WhatsApp.</p></Card>
       )}
 
       {/* Finos: global counter, everyone taps their own +1 */}
@@ -191,6 +193,25 @@ export default async function Home() {
         </>
       )}
 
+      {/* Hall of Fame */}
+      {hall.length > 0 && (
+        <>
+          <SectionTitle action={<Link href="/hall" className="text-xs text-muted">Ver tudo →</Link>}>Hall of Fame · {lastAwardSeason}</SectionTitle>
+          <Link href="/hall" className="rise court block rounded-3xl border border-line bg-card p-4" style={{ "--i": 8 } as CSSProperties}>
+            <div className="grid grid-cols-2 gap-3">
+              {hall.map((a) => (
+                <div key={a.award} className="flex items-center gap-2.5">
+                  <Avatar name={a.winner ?? "?"} path={a.winner ? photoOf(a.winner) : null} size={38} />
+                  <div className="min-w-0">
+                    <p className="truncate text-[10px] uppercase tracking-wider text-muted">{a.award}</p>
+                    <p className="truncate text-sm font-semibold">{a.winner}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Link>
+        </>
+      )}
     </Page>
   );
 }
