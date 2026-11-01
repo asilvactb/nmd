@@ -47,7 +47,7 @@ export default function ContaPage() {
   }
 
   return (
-    <Page title="A minha conta">
+    <Page title="A minha conta" wide={false}>
       <PhotoPicker preview={preview} onPick={changePhoto} />
       {photoState && <p className="mt-2 text-center text-sm text-muted">{photoState}</p>}
       <SectionTitle>Mudar password</SectionTitle>

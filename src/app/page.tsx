@@ -107,8 +107,8 @@ export default async function Home() {
       <header className="rise mb-6 flex items-center justify-between lg:mb-8">
         <Logo className="h-6 lg:hidden" />
         <p className="eyebrow hidden lg:block">Olá, {first(player.name)}</p>
-        <Link href="/conta" aria-label="A minha conta" className="flex items-center gap-3">
-          <span className="hidden text-sm text-muted lg:inline">A minha conta</span>
+        <Link href={`/jogadores/${player.id}`} aria-label="O meu perfil" className="flex items-center gap-3">
+          <span className="hidden text-sm text-muted lg:inline">O meu perfil</span>
           <Avatar name={player.name} path={player.avatar_path} size={38} />
         </Link>
       </header>
@@ -215,7 +215,7 @@ export default async function Home() {
             <SectionTitle action={<Link href="/ranking" className="text-xs text-muted hover:text-fg">Ranking →</Link>}>{season?.name}</SectionTitle>
             <div className="overflow-hidden rounded-3xl border border-line bg-card">
               {rows.slice(0, 5).map((r, i) => (
-                <Link key={r.player_id} href="/ranking" className="flex items-center gap-3 border-t border-line px-4 py-3 transition first:border-t-0 hover:bg-card-2">
+                <Link key={r.player_id} href={`/jogadores/${r.player_id}`} className="flex items-center gap-3 border-t border-line px-4 py-3 transition first:border-t-0 hover:bg-card-2">
                   <span className={`display-num w-6 text-xl ${i === 0 ? "text-accent" : "text-muted"}`}>{i + 1}</span>
                   <Avatar name={r.name} path={r.avatar_path} size={34} />
                   <span className="flex-1 truncate font-medium">{r.name}</span>

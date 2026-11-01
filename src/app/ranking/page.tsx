@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { Page, btnGhost } from "@/components/ui";
 import { Avatar } from "@/components/Avatar";
+import { Medal } from "@/components/Medal";
 import { CountUp } from "@/components/CountUp";
 import { getCurrentSeason, getMe, type RankingRow } from "@/lib/db";
 
@@ -21,6 +22,9 @@ export default async function RankingPage() {
       .eq("events.season_id", season.id).eq("events.status", "finished"),
   ]);
   const rows = (data ?? []) as RankingRow[];
+  const { data: awardRows } = await supabase.from("awards").select("player_id, award").not("player_id", "is", null);
+  const medals = new Map<string, string[]>();
+  for (const w of awardRows ?? []) medals.set(w.player_id as string, [...(medals.get(w.player_id as string) ?? []), w.award as string]);
   const pos = ranks(rows.map((r) => Number(r.points)));
 
   // Movement since the previous encounter
@@ -47,11 +51,11 @@ export default async function RankingPage() {
             const h = idx === 0 ? "h-28" : idx === 1 ? "h-20" : "h-14";
             return (
               <div key={r.player_id} className="rise flex flex-col items-center" style={{ "--i": k + 1 } as CSSProperties}>
-                <div className="relative">
+                <Link href={`/jogadores/${r.player_id}`} className="relative">
                   <Avatar name={r.name} path={r.avatar_path} size={idx === 0 ? 84 : 64}
                     className={idx === 0 ? "!ring-accent !ring-[3px]" : ""} />
                   {idx === 0 && <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-2xl">👑</span>}
-                </div>
+                </Link>
                 <p className="mt-2 max-w-full truncate text-center text-sm font-semibold">{r.name}</p>
                 <p className="display-num text-lg text-muted">{Number(r.points).toLocaleString("pt-PT")}</p>
                 <p className="text-[10px] text-muted">{r.events_played} pres · {r.wins} vit · {r.bombos} bom</p>
@@ -80,8 +84,8 @@ export default async function RankingPage() {
           const delta = prev ? prev - now : 0;
           const isMe = r.player_id === player?.id;
           return (
-            <li key={r.player_id} className={`rise flex items-center gap-3 rounded-2xl border px-3 py-2.5 ${isMe ? "border-accent/60 bg-accent/10" : "border-line bg-card"}`}
-              style={{ "--i": Math.min(i + 4, 14) } as CSSProperties}>
+            <li key={r.player_id} className="rise" style={{ "--i": Math.min(i + 4, 14) } as CSSProperties}>
+              <Link href={`/jogadores/${r.player_id}`} className={`lift flex items-center gap-3 rounded-2xl border px-3 py-2.5 ${isMe ? "border-accent/60 bg-accent/10" : "border-line bg-card"}`}>
               <span className="flex w-7 flex-col items-center">
                 <span className={`display-num text-lg leading-none ${i < 3 ? "text-accent" : "text-muted"}`}>{now}</span>
                 <span className={`mt-0.5 text-[9px] font-semibold ${delta > 0 ? "text-accent" : delta < 0 ? "text-danger" : "text-transparent"}`}>
@@ -93,7 +97,12 @@ export default async function RankingPage() {
                 <p className="truncate text-[15px] font-medium leading-tight">
                   {r.name}{r.joker_used && <span className="text-accent"> ★</span>}
                 </p>
-                <p className="text-[11px] text-muted">{r.is_wild_card ? "Wild card · " : ""}{r.side === "L" ? "Esquerda" : "Direita"}</p>
+                {!!medals.get(r.player_id)?.length && (
+                  <span className="mt-0.5 flex gap-0.5">
+                    {medals.get(r.player_id)!.slice(0, 5).map((a, k) => <Medal key={k} award={a} size={16} />)}
+                  </span>
+                )}
+
               </div>
               <span className="display-num w-7 text-center text-base">{r.events_played}</span>
               <span className={`display-num w-7 text-center text-base ${r.wins ? "text-accent" : "text-muted"}`}>{r.wins}</span>
@@ -101,6 +110,7 @@ export default async function RankingPage() {
               <span className="display-num w-12 text-right text-xl">
                 {isMe ? <CountUp value={Number(r.points)} decimals={Number(r.points) % 1 ? 1 : 0} /> : Number(r.points).toLocaleString("pt-PT")}
               </span>
+              </Link>
             </li>
           );
         })}
