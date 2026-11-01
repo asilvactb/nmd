@@ -73,7 +73,7 @@ export default async function AdminEvent({ params }: { params: Promise<{ id: str
               {PLAYER_OPTIONS.map((o) => <option key={o.n} value={o.n}>{o.label}</option>)}
             </select>
             <select className={input} name="courts" defaultValue={String(event.courts ?? 4)}>
-              {[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n} campo{n > 1 ? "s" : ""}</option>)}
+              {[1, 2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n} campo{n > 1 ? "s" : ""}</option>)}
             </select>
             <button className={`${btnGhost} sm:col-span-3`}>Guardar</button>
           </form>
@@ -87,7 +87,7 @@ export default async function AdminEvent({ params }: { params: Promise<{ id: str
           <form action={setEventCourts} className="flex gap-2">
             <input type="hidden" name="event_id" value={id} />
             <select className={input} name="courts" defaultValue={String(event.courts ?? 4)}>
-              {[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n} campo{n > 1 ? "s" : ""}</option>)}
+              {[1, 2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n} campo{n > 1 ? "s" : ""}</option>)}
             </select>
             <button className={btnGhost}>Reorganizar jornadas</button>
           </form>

@@ -58,7 +58,7 @@ export default async function AdminPage() {
               {PLAYER_OPTIONS.map((o) => <option key={o.n} value={o.n}>{o.label}</option>)}
             </select>
             <select className={input} name="courts" defaultValue="4">
-              {[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n} campo{n > 1 ? "s" : ""}</option>)}
+              {[1, 2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n} campo{n > 1 ? "s" : ""}</option>)}
             </select>
           </div>
           <label className="flex items-center gap-2 px-1 py-1 text-sm text-muted">
