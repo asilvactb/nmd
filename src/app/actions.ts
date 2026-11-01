@@ -100,6 +100,45 @@ export async function adminSetMorfes(formData: FormData) {
   revalidatePath("/");
 }
 
+// ---------------------------------------------------------------- tesouraria (admins)
+
+/** Amount accepts "9", "+9", "-49,92", "−12.5"; positive adds to the cash, negative takes from it. */
+export async function addMovement(formData: FormData) {
+  const { supabase, player } = await requireAdmin();
+  const raw = String(formData.get("amount") ?? "").replace(/\s|€/g, "").replace("−", "-").replace(",", ".");
+  const amount = Math.round(Number(raw) * 100) / 100;
+  if (!Number.isFinite(amount) || amount === 0) return { error: "Valor inválido (ex.: 9 ou -49,92)." };
+  const playerId = String(formData.get("player_id") ?? "") || null;
+  const who = String(formData.get("counterparty") ?? "").trim() || null;
+  const { error } = await supabase.from("ledger").insert({
+    date: String(formData.get("date") || new Date().toISOString().slice(0, 10)),
+    kind: amount > 0 ? "credit" : "debit",
+    amount,
+    player_id: playerId,
+    counterparty: who,
+    reason: String(formData.get("reason") ?? "").trim() || null,
+    pending: formData.get("pending") === "on",
+    created_by: player.id,
+  });
+  revalidatePath("/tesouraria");
+  revalidatePath("/");
+  return { error: error ? "Não foi possível guardar." : null };
+}
+
+export async function setMovementPending(id: string, pending: boolean) {
+  const { supabase } = await requireAdmin();
+  await supabase.from("ledger").update({ pending }).eq("id", id);
+  revalidatePath("/tesouraria");
+  revalidatePath("/");
+}
+
+export async function deleteMovement(id: string) {
+  const { supabase } = await requireAdmin();
+  await supabase.from("ledger").delete().eq("id", id);
+  revalidatePath("/tesouraria");
+  revalidatePath("/");
+}
+
 export async function signOut() {
   const { supabase } = await getMe();
   await supabase.auth.signOut();

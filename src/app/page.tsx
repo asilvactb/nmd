@@ -67,6 +67,8 @@ export default async function Home() {
     ? await supabase.from("repasto").select("player_id").eq("event_id", next.id)
     : { data: [] };
   const morfes = (morfesRows ?? []).map((r) => byId.get(r.player_id)).filter((p): p is Mini => !!p);
+  const { data: ledger } = await supabase.from("ledger").select("amount, pending");
+  const cash = (ledger ?? []).filter((m) => !m.pending).reduce((t, m) => t + Number(m.amount), 0);
 
   const rows = (ranking ?? []) as RankingRow[];
   const myIdx = rows.findIndex((r) => r.player_id === player.id);
@@ -181,6 +183,15 @@ export default async function Home() {
             <Stat i={4} label="Pontos" value={me ? Number(me.points) : 0} decimals={me && Number(me.points) % 1 ? 1 : 0} />
             <Stat i={5} label="Presenças" value={me?.events_played ?? 0} />
           </div>
+
+          <Link href="/tesouraria" className="rise lift flex items-center gap-3 rounded-3xl border border-line bg-card p-4" style={{ "--i": 6 } as CSSProperties}>
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-card-2 text-xl">💶</span>
+            <div className="min-w-0 flex-1">
+              <p className="eyebrow !text-[10px]">Em caixa</p>
+              <p className="display-num text-2xl">{cash.toLocaleString("pt-PT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
+            </div>
+            <span className="text-xs text-muted">Movimentos →</span>
+          </Link>
 
           {next && (
             <Link href="/morfes" className="rise lift flex items-center gap-3 rounded-3xl border border-line bg-card p-4" style={{ "--i": 6 } as CSSProperties}>
