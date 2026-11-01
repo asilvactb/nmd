@@ -95,7 +95,7 @@ export default async function RankingPage() {
               <Avatar name={r.name} path={r.avatar_path} size={36} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[15px] font-medium leading-tight">
-                  {r.name}{r.joker_used && <span className="text-accent"> ★</span>}
+                  {r.name}{r.joker_used && <span title="Joker usado"> 🤡</span>}
                 </p>
                 {!!medals.get(r.player_id)?.length && (
                   <span className="mt-0.5 flex gap-0.5">
@@ -117,7 +117,7 @@ export default async function RankingPage() {
       </ol>
       </div>
       </div>
-      <p className="mt-4 text-center text-xs text-muted">Pres presenças · Vit vitórias · Bom bombos · ▲▼ desde o último encontro · ★ Joker</p>
+      <p className="mt-4 text-center text-xs text-muted">Pres presenças · Vit vitórias · Bom bombos · ▲▼ desde o último encontro · 🤡 Joker usado</p>
     </Page>
   );
 }

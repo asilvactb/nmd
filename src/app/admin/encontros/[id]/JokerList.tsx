@@ -32,7 +32,7 @@ export function JokerList({ eventId, rows, locked }: { eventId: string; rows: Ro
             className={`flex items-center gap-2 rounded-2xl border px-2 py-2 text-left text-sm transition active:scale-[0.97] ${state[r.id] ? "border-accent bg-accent/15" : "border-line bg-card"}`}>
             <Avatar name={r.name} path={r.avatar_path} size={28} />
             <span className="min-w-0 flex-1 truncate">{r.name}</span>
-            <span className={state[r.id] ? "text-accent" : "text-line"}>★</span>
+            <span className={state[r.id] ? "" : "opacity-20 grayscale"}>🤡</span>
           </button>
         ))}
       </div>

@@ -99,7 +99,7 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
             ))}
             <div className="rise col-span-3 rounded-2xl border border-line bg-card p-4 lg:col-span-5" style={{ "--i": 6 } as CSSProperties}>
               <p className="eyebrow !text-[10px]">Joker</p>
-              <p className="mt-1 text-sm">{mine?.joker_used ? "★ Já usado esta temporada" : "Ainda por usar esta temporada"}</p>
+              <p className="mt-1 text-sm">{mine?.joker_used ? "🤡 Já usado esta temporada" : "Ainda por usar esta temporada"}</p>
             </div>
           </div>
 
@@ -154,7 +154,7 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
                         </p>
                       </div>
                       {top && <span>🏆</span>}{bombo && <span>🥁</span>}
-                      {pt && <span className="display-num w-12 text-right text-lg">{Number(pt.points).toLocaleString("pt-PT")}{pt.joker && <span className="text-xs text-accent"> ★</span>}</span>}
+                      {pt && <span className="display-num w-12 text-right text-lg">{Number(pt.points).toLocaleString("pt-PT")}{pt.joker && <span className="text-xs" title="Joker"> 🤡</span>}</span>}
                     </Link>
                   </li>
                 );
