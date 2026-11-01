@@ -175,3 +175,33 @@ describe("tournament", () => {
     expect(pts[[...places.keys()].indexOf("a2")]).toBe(7.5);
   });
 });
+
+import { scheduleMatches } from "../schedule";
+
+describe("court schedule", () => {
+  it("10 pairs on 4 courts: 5 group jornadas, finals after their semis", () => {
+    const f = formatFor(10);
+    const items = [
+      ...[1, 2, 3, 4, 5].flatMap((r) => ["A", "B"].flatMap((g) => [0, 1].map((k) => ({ key: `${g}${r}${k}`, round: r })))),
+      ...f.knockout.map((k) => ({ key: k.id, knockoutId: k.id })),
+    ];
+    const s = scheduleMatches(items, f, 4);
+    const at = (key: string) => s.find((x) => x.key === key)!;
+    expect(at("A10").slot).toBe(1);
+    expect(at("B51").slot).toBe(5);
+    expect(Math.max(...s.filter((x) => x.slot === 1).map((x) => x.court))).toBe(4);
+    expect(at("F").slot).toBeGreaterThan(at("MF1").slot);
+    expect(at("FB").slot).toBeGreaterThan(at("MB2").slot);
+    for (const slot of new Set(s.map((x) => x.slot))) {
+      expect(s.filter((x) => x.slot === slot).length).toBeLessThanOrEqual(4);
+    }
+  });
+
+  it("6 games in a round on 2 courts take 3 jornadas", () => {
+    const f = formatFor(6);
+    const items = [0, 1, 2].map((k) => ({ key: `g${k}`, round: 1 }));
+    const s = scheduleMatches(items, f, 2);
+    expect(s.map((x) => x.slot)).toEqual([1, 1, 2]);
+    expect(s.map((x) => x.court)).toEqual([1, 2, 1]);
+  });
+});

@@ -48,7 +48,7 @@ export default async function AdminPage() {
         <p className="eyebrow mb-3">Novo encontro</p>
         <form action={createEvent} className="flex flex-col gap-2">
           <input className={input} type="date" name="date" defaultValue={nextSunday()} required />
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid gap-2 sm:grid-cols-[1fr_2fr_1fr]">
             <select className={input} name="pairing_mode" defaultValue="ranking">
               <option value="ranking">Ranking</option>
               <option value="weighted">Média ponderada</option>
@@ -56,6 +56,9 @@ export default async function AdminPage() {
             </select>
             <select className={input} name="expected_players" defaultValue="20">
               {PLAYER_OPTIONS.map((o) => <option key={o.n} value={o.n}>{o.label}</option>)}
+            </select>
+            <select className={input} name="courts" defaultValue="4">
+              {[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n} campo{n > 1 ? "s" : ""}</option>)}
             </select>
           </div>
           <button className={btn}>Criar encontro e preparar sorteio</button>

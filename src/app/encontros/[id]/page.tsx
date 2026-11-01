@@ -75,7 +75,26 @@ export default async function EncontroPage({ params }: { params: Promise<{ id: s
       peopleA={people(m.pair_a)} peopleB={people(m.pair_b)} tag={tag} canEdit={isAdmin && event.status !== "finished"} />
   );
 
-  const jogos = (
+  // With a court schedule, games are shown in playing order: jornada by jornada, with the court
+  const slots = [...new Set(matches.filter((m) => m.slot).map((m) => m.slot!))].sort((a, b) => a - b);
+  const tagOf = (m: MatchRow) => [
+    m.court ? `Campo ${m.court}` : null,
+    m.stage === "group" ? (groups.length > 1 ? `Grupo ${m.group_name}` : null) : m.label,
+  ].filter(Boolean).join(" · ") || undefined;
+  const jogos = slots.length ? (
+    <div>
+      {slots.map((sl) => {
+        const inSlot = matches.filter((m) => m.slot === sl).sort((a, b) => (a.court ?? 0) - (b.court ?? 0));
+        const done = inSlot.every((m) => m.score_a != null);
+        return (
+          <div key={sl}>
+            <SectionTitle action={done ? <span className="text-[10px] text-muted">✓ terminada</span> : undefined}>Jornada {sl}</SectionTitle>
+            <div className="flex flex-col gap-2">{inSlot.map((m) => card(m, tagOf(m)))}</div>
+          </div>
+        );
+      })}
+    </div>
+  ) : (
     <div>
       {rounds.map((r) => (
         <div key={r}>

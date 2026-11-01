@@ -61,6 +61,8 @@ export interface MatchRow {
   pair_b: string | null;
   score_a: number | null;
   score_b: number | null;
+  slot: number | null;
+  court: number | null;
 }
 
 export interface RankingRow {

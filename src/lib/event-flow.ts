@@ -16,6 +16,7 @@ import {
   type FormatDef,
 } from "@/lib/engine/tournament";
 import type { FixedPair, Player } from "@/lib/engine/types";
+import { scheduleMatches } from "@/lib/engine/schedule";
 import type { EventRow, MatchRow, PairRow, PlayerRow } from "@/lib/db";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -161,6 +162,7 @@ export async function savePairsAndFixtures(db: SupabaseClient, eventId: string, 
   }
   const { error: mErr } = await db.from("matches").insert(matchRows);
   if (mErr) throw mErr;
+  await rescheduleEvent(db, eventId);
 
   await db
     .from("events")
@@ -251,4 +253,25 @@ export async function finishEvent(db: SupabaseClient, eventId: string) {
   const { error } = await db.from("event_points").insert(rows);
   if (error) throw error;
   await db.from("events").update({ status: "finished" }).eq("id", eventId);
+}
+
+/** Assign every match of the encounter to a jornada and a court (event.courts). */
+export async function rescheduleEvent(db: SupabaseClient, eventId: string) {
+  const event = await loadEvent(db, eventId);
+  const [{ data: pairs }, { data: matches }] = await Promise.all([
+    db.from("pairs").select("id").eq("event_id", eventId),
+    db.from("matches").select("*").eq("event_id", eventId),
+  ]);
+  if (!pairs?.length || !matches?.length) return;
+  const format = eventFormat(event, pairs.length);
+  const ms = matches as MatchRow[];
+  // Within a round, alternate groups so every group plays at the same time
+  const ordered = [...ms].sort((a, b) =>
+    (a.round ?? 0) - (b.round ?? 0) || (a.group_name ?? "").localeCompare(b.group_name ?? "") || a.id.localeCompare(b.id));
+  const plan = scheduleMatches(
+    ordered.map((m) => ({ key: m.id, round: m.stage === "group" ? m.round ?? undefined : undefined, knockoutId: m.knockout_id ?? undefined })),
+    format,
+    event.courts || 4,
+  );
+  for (const p of plan) await db.from("matches").update({ slot: p.slot, court: p.court }).eq("id", p.key);
 }

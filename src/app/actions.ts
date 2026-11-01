@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getMe, requireAdmin } from "@/lib/db";
 import { validateScore } from "@/lib/engine/tournament";
-import { advanceKnockout, computePairs, finishEvent, savePairsAndFixtures } from "@/lib/event-flow";
+import { advanceKnockout, computePairs, finishEvent, rescheduleEvent, savePairsAndFixtures } from "@/lib/event-flow";
 
 // ---------------------------------------------------------------- members
 
@@ -133,6 +133,7 @@ export async function createEvent(formData: FormData) {
       season_id: season.id,
       date: String(formData.get("date")),
       expected_players: Number(formData.get("expected_players") ?? 20),
+      courts: Number(formData.get("courts") ?? 4),
       pairing_mode: String(formData.get("pairing_mode") ?? "ranking"),
     })
     .select("id")
@@ -250,6 +251,15 @@ export async function removeFixedPair(id: string, eventId: string) {
   revalidatePath(`/admin/encontros/${eventId}`);
 }
 
+export async function setEventCourts(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const eventId = String(formData.get("event_id"));
+  await supabase.from("events").update({ courts: Number(formData.get("courts")) }).eq("id", eventId);
+  await rescheduleEvent(supabase, eventId);
+  revalidatePath(`/admin/encontros/${eventId}`);
+  revalidatePath(`/encontros/${eventId}`);
+}
+
 export async function updateEventSettings(formData: FormData) {
   const { supabase } = await requireAdmin();
   const eventId = String(formData.get("event_id"));
@@ -258,6 +268,7 @@ export async function updateEventSettings(formData: FormData) {
     .update({
       pairing_mode: String(formData.get("pairing_mode")),
       expected_players: Number(formData.get("expected_players")),
+      courts: Number(formData.get("courts") ?? 4),
     })
     .eq("id", eventId);
   revalidatePath(`/admin/encontros/${eventId}`);
@@ -311,6 +322,7 @@ export async function useDirectCross(eventId: string) {
     );
     await supabase.from("events").update({ format_id: f.id }).eq("id", eventId);
     await advanceKnockout(supabase, eventId);
+    await rescheduleEvent(supabase, eventId);
   }
   revalidatePath(`/encontros/${eventId}`);
 }
