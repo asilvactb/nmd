@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getMe, requireAdmin } from "@/lib/db";
 import { validateScore } from "@/lib/engine/tournament";
-import { advanceKnockout, computePairs, finishEvent, rescheduleEvent, savePairsAndFixtures } from "@/lib/event-flow";
+import { advanceKnockout, computePairs, finishEvent, rescheduleEvent, reviewedPairs, savePairsAndFixtures } from "@/lib/event-flow";
 
 // ---------------------------------------------------------------- members
 
@@ -47,7 +47,7 @@ export async function addFinos() {
   if (!player) throw new Error("Sem jogador associado.");
   const today = new Date().toISOString().slice(0, 10);
   const { data: ev } = await supabase
-    .from("events").select("id").lte("date", today).order("date", { ascending: false }).limit(1).maybeSingle();
+    .from("events").select("id").lte("date", today).eq("counts_for_ranking", true).order("date", { ascending: false }).limit(1).maybeSingle();
   await supabase.from("finos").insert({
     player_id: player.id, event_id: ev?.id ?? null, quantity: 1, kind: "drink", created_by: player.id,
   });
@@ -135,11 +135,25 @@ export async function createEvent(formData: FormData) {
       expected_players: Number(formData.get("expected_players") ?? 20),
       courts: Number(formData.get("courts") ?? 4),
       pairing_mode: String(formData.get("pairing_mode") ?? "ranking"),
+      counts_for_ranking: formData.get("test") !== "on",
     })
     .select("id")
     .single();
   if (error) throw error;
   redirect(`/admin/encontros/${data.id}`);
+}
+
+/** Deletes a test encounter and everything in it (pairs, games, points, morfes, finos). */
+export async function deleteTestEvent(eventId: string) {
+  const { supabase } = await requireAdmin();
+  const { data: ev } = await supabase.from("events").select("counts_for_ranking").eq("id", eventId).single();
+  if (!ev || ev.counts_for_ranking) throw new Error("Só se podem apagar encontros de teste.");
+  await supabase.from("finos").delete().eq("event_id", eventId);
+  await supabase.from("events").delete().eq("id", eventId);
+  revalidatePath("/");
+  revalidatePath("/admin");
+  revalidatePath("/encontros");
+  redirect("/admin");
 }
 
 export async function adminRegister(eventId: string, playerId: string, on: boolean) {
@@ -297,9 +311,13 @@ export async function previewPairs(eventId: string) {
 }
 
 /** Run the engine again and publish pairs + fixtures. */
-export async function publishPairs(eventId: string) {
+/** Publishes exactly the pairs the admin reviewed (and possibly rearranged) in the preview. */
+export async function publishPairs(
+  eventId: string,
+  reviewed: { pairs: { leftId: string; rightId: string; reason: string }[]; log: string[]; warnings: string[] },
+) {
   const { supabase } = await requireAdmin();
-  const r = await computePairs(supabase, eventId);
+  const r = await reviewedPairs(supabase, eventId, reviewed.pairs, reviewed.log, reviewed.warnings);
   await savePairsAndFixtures(supabase, eventId, r);
   revalidatePath(`/admin/encontros/${eventId}`);
   redirect(`/encontros/${eventId}`);

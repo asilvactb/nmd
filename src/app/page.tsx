@@ -47,8 +47,8 @@ export default async function Home() {
 
   const season = await getCurrentSeason();
   const [{ data: next }, { data: last }, { data: ranking }, { data: finos }, { data: awards }, { data: people }] = await Promise.all([
-    supabase.from("events").select("*").neq("status", "finished").order("date").limit(1).maybeSingle<EventRow>(),
-    supabase.from("events").select("*").eq("status", "finished").order("date", { ascending: false }).limit(1).maybeSingle<EventRow>(),
+    supabase.from("events").select("*").neq("status", "finished").eq("counts_for_ranking", true).order("date").limit(1).maybeSingle<EventRow>(),
+    supabase.from("events").select("*").eq("status", "finished").eq("counts_for_ranking", true).order("date", { ascending: false }).limit(1).maybeSingle<EventRow>(),
     season
       ? supabase.from("season_ranking").select("*").eq("season_id", season.id).order("points", { ascending: false })
       : Promise.resolve({ data: [] }),

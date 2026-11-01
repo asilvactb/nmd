@@ -12,9 +12,9 @@ const STATUS: Record<EventRow["status"], string> = {
 };
 
 export default async function EncontrosPage() {
-  const { supabase } = await getMe();
+  const { supabase, player } = await getMe();
   const { data } = await supabase.from("events").select("*").order("date", { ascending: false }).limit(40);
-  const events = (data ?? []) as EventRow[];
+  const events = ((data ?? []) as EventRow[]).filter((e) => e.counts_for_ranking || player?.is_admin);
   const ids = events.map((e) => e.id);
   const [{ data: winners }, { data: people }, { data: sizes }] = await Promise.all([
     supabase.from("pairs").select("*").in("event_id", ids).eq("final_position", 1),
@@ -43,7 +43,10 @@ export default async function EncontrosPage() {
                   <span className="text-[10px] font-semibold uppercase">{d.toLocaleDateString("pt-PT", { month: "short" }).replace(".", "")}</span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-semibold capitalize">{d.toLocaleDateString("pt-PT", { weekday: "long" })}</p>
+                  <p className="font-semibold capitalize">
+                    {d.toLocaleDateString("pt-PT", { weekday: "long" })}
+                    {!e.counts_for_ranking && <span className="ml-2 rounded-full bg-danger/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-danger">Teste</span>}
+                  </p>
                   <p className="flex items-center gap-2 text-sm text-muted">
                     {e.status === "live" && <span className="live-dot" />}{STATUS[e.status]}
                     {pairsIn.get(e.id) ? ` · ${pairsIn.get(e.id)} duplas` : ""}

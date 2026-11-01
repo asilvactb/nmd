@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Card, Page, SectionTitle, btnGhost, input } from "@/components/ui";
 import { formatDate, requireAdmin, type EventRow, type PlayerRow } from "@/lib/db";
 import { PLAYER_OPTIONS } from "@/lib/player-options";
-import { addFixedPair, removeFixedPair, setEventCourts, updateEventSettings } from "../../../actions";
+import { addFixedPair, deleteTestEvent, removeFixedPair, setEventCourts, updateEventSettings } from "../../../actions";
 import { PairingPanel } from "./PairingPanel";
 import { SidePicker } from "./SidePicker";
 import { JokerList } from "./JokerList";
@@ -30,7 +30,7 @@ export default async function AdminEvent({ params }: { params: Promise<{ id: str
   const drawn = event.status !== "registration";
 
   return (
-    <Page eyebrow={drawn ? "Duplas sorteadas" : "Preparar sorteio"} title={formatDate(event.date).replace(".", "")}
+    <Page eyebrow={`${event.counts_for_ranking ? "" : "🧪 Teste · "}${drawn ? "Duplas sorteadas" : "Preparar sorteio"}`} title={formatDate(event.date).replace(".", "")}
       action={<Link href={`/encontros/${id}`} className={btnGhost}>Ver jogos</Link>}>
 
       {!drawn ? (
@@ -103,6 +103,15 @@ export default async function AdminEvent({ params }: { params: Promise<{ id: str
             <ul className="list-disc space-y-1 pl-5 text-sm text-muted">{event.pairing_log?.log.map((l) => <li key={l}>{l}</li>)}</ul>
           </Card>
         </>
+      )}
+      {!event.counts_for_ranking && (
+        <div className="mt-12 rounded-3xl border border-danger/40 bg-danger/10 p-5">
+          <p className="font-semibold">Encontro de teste</p>
+          <p className="mt-1 text-sm text-muted">Não conta para o ranking e só os admins o veem. Quando acabares, apaga-o: vão as duplas, os jogos, os pontos, os morfes e os finos deste teste.</p>
+          <form action={deleteTestEvent.bind(null, id)} className="mt-4">
+            <button className="rounded-full bg-danger px-5 py-3 text-sm font-semibold text-white active:scale-[0.97]">Apagar encontro de teste</button>
+          </form>
+        </div>
       )}
     </Page>
   );

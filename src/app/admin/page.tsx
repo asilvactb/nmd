@@ -61,6 +61,10 @@ export default async function AdminPage() {
               {[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n} campo{n > 1 ? "s" : ""}</option>)}
             </select>
           </div>
+          <label className="flex items-center gap-2 px-1 py-1 text-sm text-muted">
+            <input type="checkbox" name="test" className="h-4 w-4 accent-[var(--accent)]" />
+            Encontro de teste — não conta para o ranking, só os admins o veem, e pode ser apagado no fim
+          </label>
           <button className={btn}>Criar encontro e preparar sorteio</button>
         </form>
       </Card>
@@ -69,7 +73,7 @@ export default async function AdminPage() {
       <div className="flex flex-col gap-2">
         {((data ?? []) as EventRow[]).map((e) => (
           <Link key={e.id} href={`/admin/encontros/${e.id}`}>
-            <Card className="flex justify-between"><span className="capitalize">{formatDate(e.date)}</span><span className="text-muted">Gerir →</span></Card>
+            <Card className="flex justify-between"><span className="capitalize">{formatDate(e.date)}{!e.counts_for_ranking && <span className="ml-2 rounded-full bg-danger/20 px-2 py-0.5 text-[10px] font-semibold uppercase text-danger">Teste</span>}</span><span className="text-muted">Gerir →</span></Card>
           </Link>
         ))}
       </div>

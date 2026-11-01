@@ -18,7 +18,7 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
   const [{ data: p }, { data: awardsData }, { data: pairsData }, { data: people }, { data: ranking }, { data: pts }] = await Promise.all([
     supabase.from("players").select("*").eq("id", id).maybeSingle<PlayerRow>(),
     supabase.from("awards").select("season_name, award").eq("player_id", id),
-    supabase.from("pairs").select("*, events!inner(id, date, status)").or(`left_player.eq.${id},right_player.eq.${id}`),
+    supabase.from("pairs").select("*, events!inner(id, date, status, counts_for_ranking)").eq("events.counts_for_ranking", true).or(`left_player.eq.${id},right_player.eq.${id}`),
     supabase.from("players").select("id, name, avatar_path"),
     season ? supabase.from("season_ranking").select("*").eq("season_id", season.id).order("points", { ascending: false }) : Promise.resolve({ data: [] }),
     supabase.from("event_points").select("event_id, points, joker").eq("player_id", id),

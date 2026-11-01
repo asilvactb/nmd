@@ -64,6 +64,7 @@ async function recentPairs(db: SupabaseClient, event: EventRow): Promise<Array<[
     .from("events")
     .select("id")
     .lt("date", event.date)
+    .eq("counts_for_ranking", true)
     .order("date", { ascending: false })
     .limit(4);
   const ids = (prev ?? []).map((e) => e.id);
@@ -90,6 +91,7 @@ export async function computePairs(db: SupabaseClient, eventId: string): Promise
     .from("events")
     .select("id", { count: "exact", head: true })
     .eq("season_id", event.season_id)
+    .eq("counts_for_ranking", true)
     .lt("date", event.date);
 
   const { data: fixed } = await db.from("fixed_pair_requests").select("*").eq("event_id", eventId);
@@ -111,6 +113,44 @@ export async function computePairs(db: SupabaseClient, eventId: string): Promise
     recentPairs: await recentPairs(db, event),
     volunteers: (regs ?? []).filter((r) => r.volunteer_switch).map((r) => (r.players as unknown as PlayerRow).id),
   });
+}
+
+/**
+ * Pairs as reviewed by the admin (the preview, possibly with players dragged between pairs).
+ * Every player called up for the Sunday must appear exactly once.
+ */
+export async function reviewedPairs(
+  db: SupabaseClient,
+  eventId: string,
+  pairs: { leftId: string; rightId: string; reason: string }[],
+  log: string[],
+  warnings: string[],
+): Promise<PairingResult> {
+  const event = await loadEvent(db, eventId);
+  const { data: regs } = await db.from("registrations").select("players(*)").eq("event_id", eventId);
+  const byId = new Map((regs ?? []).map((r) => {
+    const p = r.players as unknown as PlayerRow;
+    return [p.id, p] as const;
+  }));
+  const ids = pairs.flatMap((p) => [p.leftId, p.rightId]);
+  if (new Set(ids).size !== ids.length || ids.length !== byId.size || ids.some((id) => !byId.has(id))) {
+    throw new Error("As duplas não batem certo com os convocados. Volta a pré-visualizar.");
+  }
+  const str = await strengths(db, event);
+  const toPlayer = (id: string, side: "L" | "R"): Player => {
+    const p = byId.get(id)!;
+    return { id, name: p.name, side, strength: str.get(id) ?? 0, isWildCard: p.is_wild_card };
+  };
+  return {
+    pairs: pairs.map((p) => ({
+      left: toPlayer(p.leftId, "L"),
+      right: toPlayer(p.rightId, "R"),
+      reason: p.reason as PairingResult["pairs"][number]["reason"],
+    })),
+    sideSwitches: [],
+    log,
+    warnings,
+  };
 }
 
 /** Save pairs, split them into groups (snake by strength) and create every match. */

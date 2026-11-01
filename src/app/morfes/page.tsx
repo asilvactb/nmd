@@ -17,9 +17,9 @@ export default async function MorfesPage() {
   const { supabase, player } = await getMe();
   const season = await getCurrentSeason();
   const [{ data: next }, { data: people }, { data: repasto }, { data: ranking }] = await Promise.all([
-    supabase.from("events").select("*").neq("status", "finished").order("date").limit(1).maybeSingle<EventRow>(),
+    supabase.from("events").select("*").neq("status", "finished").eq("counts_for_ranking", true).order("date").limit(1).maybeSingle<EventRow>(),
     supabase.from("players").select("id, name, avatar_path").eq("active", true).order("name"),
-    supabase.from("repasto").select("player_id, event_id, events!inner(date, season_id)"),
+    supabase.from("repasto").select("player_id, event_id, events!inner(date, season_id, counts_for_ranking)").eq("events.counts_for_ranking", true),
     season ? supabase.from("season_ranking").select("player_id").eq("season_id", season.id) : Promise.resolve({ data: [] }),
   ]);
   const byId = new Map(((people ?? []) as Mini[]).map((p) => [p.id, p]));

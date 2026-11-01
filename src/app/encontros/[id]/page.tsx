@@ -44,6 +44,7 @@ export default async function EncontroPage({ params }: { params: Promise<{ id: s
       <p className="eyebrow flex items-center gap-2">
         {event.status === "live" && <span className="live-dot" />}
         <span className={event.status === "live" ? "text-accent" : ""}>{statusLabel}</span>
+        {!event.counts_for_ranking && <span className="rounded-full bg-danger/20 px-2 py-0.5 text-danger">Teste</span>}
       </p>
       <h1 className="display mt-2 text-[40px] capitalize">{formatDate(event.date).replace(".", "")}</h1>
     </div>
