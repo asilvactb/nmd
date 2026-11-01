@@ -1,22 +1,18 @@
 @import "tailwindcss";
+@import "@fontsource-variable/archivo/wdth.css";
+@import "@fontsource-variable/inter/index.css";
 
+/* NMD — night court: near-black surfaces, chalk-white type, padel-ball lime as the only accent */
 :root {
-  --bg: #ffffff;
-  --fg: #0a0a0a;
-  --muted: #6b6b6b;
-  --line: #e7e7e7;
-  --card: #f6f6f6;
-  --accent: #0a0a0a;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0a0a0a;
-    --fg: #f5f5f5;
-    --muted: #9a9a9a;
-    --line: #262626;
-    --card: #161616;
-    --accent: #f5f5f5;
-  }
+  --bg: #09090a;
+  --fg: #f4f4f2;
+  --muted: #8b8b88;
+  --line: #222224;
+  --card: #141415;
+  --card-2: #1c1c1e;
+  --accent: #d6ff3d;
+  --accent-ink: #0b0d00;
+  --danger: #ff5a4e;
 }
 
 @theme inline {
@@ -25,13 +21,78 @@
   --color-muted: var(--muted);
   --color-line: var(--line);
   --color-card: var(--card);
+  --color-card-2: var(--card-2);
   --color-accent: var(--accent);
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, sans-serif;
+  --color-accent-ink: var(--accent-ink);
+  --color-danger: var(--danger);
+  --font-sans: "Inter Variable", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: "Archivo Variable", "Inter Variable", sans-serif;
 }
 
-html, body { background: var(--bg); color: var(--fg); }
+html, body { background: var(--bg); color: var(--fg); color-scheme: dark; }
 body {
   -webkit-tap-highlight-color: transparent;
-  padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  overscroll-behavior-y: none;
 }
+::selection { background: var(--accent); color: var(--accent-ink); }
+
 .tabular { font-variant-numeric: tabular-nums; }
+
+/* Wide, heavy display type for headings and numbers */
+.display {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 125;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+.display-num {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 112;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+.eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Entrance: content rises in, staggered with style="--i: n" */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+.rise { animation: rise 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: calc(var(--i, 0) * 60ms); }
+
+@keyframes pulse-dot {
+  0% { box-shadow: 0 0 0 0 rgb(214 255 61 / 0.7); }
+  70% { box-shadow: 0 0 0 10px rgb(214 255 61 / 0); }
+  100% { box-shadow: 0 0 0 0 rgb(214 255 61 / 0); }
+}
+.live-dot { width: 8px; height: 8px; border-radius: 999px; background: var(--accent); animation: pulse-dot 1.6s infinite; }
+
+@keyframes pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+.pop { animation: pop 0.35s ease-out; }
+
+/* Court lines texture used behind hero blocks */
+.court {
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.05) 1px, transparent 1px);
+  background-size: 50% 50%;
+  background-position: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise, .pop, .live-dot { animation: none; }
+}

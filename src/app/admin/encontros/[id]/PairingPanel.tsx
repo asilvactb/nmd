@@ -15,7 +15,7 @@ export function PairingPanel({ eventId }: { eventId: string }) {
       <button className={btnGhost} disabled={pending} onClick={() => start(async () => setPreview(await previewPairs(eventId)))}>
         {pending ? "A calcular…" : preview ? "Recalcular" : "Pré-visualizar duplas"}
       </button>
-      {preview?.error && <p className="text-sm text-red-600">{preview.error}</p>}
+      {preview?.error && <p className="text-sm text-danger">{preview.error}</p>}
       {preview && !preview.error && (
         <Card>
           <ol className="space-y-1.5">

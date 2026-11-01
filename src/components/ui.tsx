@@ -1,28 +1,47 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
-export function Page({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
+export function Page({ title, eyebrow, action, children }: {
+  title?: string; eyebrow?: string; action?: ReactNode; children: ReactNode;
+}) {
   return (
-    <main className="mx-auto max-w-lg px-4 pt-[calc(env(safe-area-inset-top)+16px)]">
-      <header className="mb-5 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        {action}
-      </header>
+    <main className="mx-auto max-w-lg px-4 pt-[calc(env(safe-area-inset-top)+20px)]">
+      {(title || action) && (
+        <header className="rise mb-6 flex items-end justify-between gap-4">
+          <div>
+            {eyebrow && <p className="eyebrow mb-2">{eyebrow}</p>}
+            {title && <h1 className="display text-[34px]">{title}</h1>}
+          </div>
+          {action}
+        </header>
+      )}
       {children}
     </main>
   );
 }
 
-export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <section className={`rounded-2xl bg-card p-4 ${className}`}>{children}</section>;
+export function Card({ children, className = "", i, style }: {
+  children: ReactNode; className?: string; i?: number; style?: CSSProperties;
+}) {
+  return (
+    <section className={`rise rounded-3xl border border-line bg-card p-5 ${className}`}
+      style={{ ...(i !== undefined ? ({ "--i": i } as CSSProperties) : {}), ...style }}>
+      {children}
+    </section>
+  );
 }
 
-export function SectionTitle({ children }: { children: ReactNode }) {
-  return <h2 className="mb-2 mt-6 text-xs font-medium uppercase tracking-wider text-muted">{children}</h2>;
+export function SectionTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
+  return (
+    <div className="mb-3 mt-9 flex items-center justify-between">
+      <h2 className="eyebrow">{children}</h2>
+      {action}
+    </div>
+  );
 }
 
 export const btn =
-  "inline-flex items-center justify-center rounded-full bg-accent px-5 py-3 text-sm font-medium text-bg active:opacity-80 disabled:opacity-40";
+  "inline-flex items-center justify-center gap-2 rounded-full bg-accent px-6 py-3.5 text-[15px] font-semibold text-accent-ink transition active:scale-[0.97] disabled:opacity-40";
 export const btnGhost =
-  "inline-flex items-center justify-center rounded-full border border-line px-4 py-2.5 text-sm active:opacity-70";
+  "inline-flex items-center justify-center gap-2 rounded-full border border-line bg-card-2 px-4 py-2.5 text-sm font-medium transition active:scale-[0.97]";
 export const input =
-  "w-full rounded-xl border border-line bg-bg px-3 py-3 text-base outline-none focus:border-fg";
+  "w-full rounded-2xl border border-line bg-card px-4 py-3.5 text-base text-fg outline-none transition placeholder:text-muted focus:border-accent";

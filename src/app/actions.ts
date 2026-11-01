@@ -41,12 +41,16 @@ export async function setJoker(eventId: string, on: boolean) {
   revalidatePath("/");
 }
 
-export async function addFinos(formData: FormData) {
-  const { supabase, player } = await getMe();
-  if (!player) throw new Error("Sem jogador associado.");
-  const quantity = Number(formData.get("quantity") ?? 1);
-  await supabase.from("finos").insert({ player_id: player.id, quantity, kind: "drink", created_by: player.id });
+export async function setEventFinos(formData: FormData) {
+  const { supabase, player } = await requireAdmin();
+  const eventId = String(formData.get("event_id"));
+  const quantity = Math.max(0, Math.round(Number(formData.get("quantity") ?? 0)));
+  await supabase.from("finos").delete().eq("event_id", eventId).is("player_id", null);
+  if (quantity > 0) {
+    await supabase.from("finos").insert({ event_id: eventId, quantity, kind: "drink", created_by: player.id });
+  }
   revalidatePath("/finos");
+  revalidatePath("/");
 }
 
 export async function signOut() {

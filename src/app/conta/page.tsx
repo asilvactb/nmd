@@ -60,7 +60,7 @@ export default function ContaPage() {
           <input className={input} type="password" placeholder="Repetir password" minLength={6} required
             autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
           <button className={btn} disabled={state === "busy"}>Guardar</button>
-          {state === "error" && <p className="text-sm text-red-600">{error}</p>}
+          {state === "error" && <p className="text-sm text-danger">{error}</p>}
         </form>
       )}
     </Page>

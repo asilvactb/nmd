@@ -87,20 +87,22 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-[85dvh] max-w-sm flex-col justify-center px-6">
-      <Logo className="mx-auto mb-3 w-40" />
-      <p className="mb-8 text-center text-sm text-muted">Nunca Mais é Domingo</p>
+    <main className="relative mx-auto flex min-h-[100dvh] max-w-sm flex-col justify-center overflow-hidden px-6 py-12">
+      <div className="pointer-events-none absolute left-1/2 top-[12%] h-72 w-72 -translate-x-1/2 rounded-full bg-accent/20 blur-[90px]" />
+      <div className="court pointer-events-none absolute inset-0 opacity-60 [mask-image:radial-gradient(circle_at_50%_30%,black,transparent_70%)]" />
+      <Logo className="rise relative mx-auto mb-4 w-44" />
+      <p className="rise eyebrow relative mb-10 text-center" style={{ "--i": 1 } as React.CSSProperties}>Nunca Mais é Domingo</p>
 
-      <div className="mb-4 grid grid-cols-2 rounded-full bg-card p-1 text-sm">
+      <div className="relative mb-4 grid grid-cols-2 rounded-full border border-line bg-card p-1 text-sm">
         {(["login", "signup"] as const).map((m) => (
           <button key={m} type="button" onClick={() => { setMode(m); setError(null); }}
-            className={`rounded-full py-2 ${mode === m ? "bg-bg font-medium shadow-sm" : "text-muted"}`}>
+            className={`rounded-full py-2.5 font-medium transition ${mode === m ? "bg-fg text-bg" : "text-muted"}`}>
             {m === "login" ? "Entrar" : "Criar conta"}
           </button>
         ))}
       </div>
 
-      <form onSubmit={submit} className="flex flex-col gap-3">
+      <form onSubmit={submit} className="relative flex flex-col gap-3">
         <input className={input} type="email" required autoComplete="email" placeholder="Email"
           value={email} onChange={(e) => setEmail(e.target.value)} />
         <input className={input} type="password" required minLength={6} placeholder="Password"
@@ -137,7 +139,7 @@ export default function LoginPage() {
           {busy ? "Um momento…" : mode === "login" ? "Entrar" : "Criar conta"}
         </button>
       </form>
-      {error && <p className="mt-3 text-center text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-3 text-center text-sm text-danger">{error}</p>}
       {mode === "signup" && (
         <p className="mt-6 text-center text-xs text-muted">A tua conta fica ativa depois de um admin a validar.</p>
       )}

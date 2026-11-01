@@ -1,11 +1,13 @@
 import { notFound } from "next/navigation";
-import { Card, Page, SectionTitle, btnGhost } from "@/components/ui";
+import type { CSSProperties } from "react";
+import { Card, Page, SectionTitle, btn, btnGhost } from "@/components/ui";
+import { PairAvatars } from "@/components/Avatar";
+import { Tabs } from "@/components/Tabs";
 import { formatDate, getMe, pairName, type EventRow, type MatchRow, type PairRow, type PlayerRow } from "@/lib/db";
 import { eventFormat, tournamentState } from "@/lib/event-flow";
 import { closeEvent, useDirectCross } from "../../actions";
 import { LiveRefresh } from "./LiveRefresh";
 import { MatchCard } from "./MatchCard";
-import { PairAvatars } from "@/components/Avatar";
 
 export default async function EncontroPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -23,20 +25,35 @@ export default async function EncontroPage({ params }: { params: Promise<{ id: s
   const players = new Map(((playersData ?? []) as PlayerRow[]).map((p) => [p.id, p]));
   const pairById = new Map(pairs.map((p) => [p.id, p]));
   const name = (pid: string | null) => (pid ? pairName(pairById.get(pid), players) : "A definir");
-  const isAdmin = !!player?.is_admin;
-  const person = (id: string) => {
-    const p = players.get(id);
-    return { name: p?.name ?? "?", path: p?.avatar_path ?? null };
+  const short = (pid: string | null) => {
+    const pr = pid ? pairById.get(pid) : undefined;
+    if (!pr) return "A definir";
+    const first = (x: string) => (players.get(x)?.name ?? "?").split(" ")[0];
+    return `${first(pr.left_player)} / ${first(pr.right_player)}`;
   };
+  const person = (pid: string) => ({ name: players.get(pid)?.name ?? "?", path: players.get(pid)?.avatar_path ?? null });
   const people = (pid: string | null): [ReturnType<typeof person>, ReturnType<typeof person>] | undefined => {
     const pr = pid ? pairById.get(pid) : undefined;
     return pr ? [person(pr.left_player), person(pr.right_player)] : undefined;
   };
+  const isAdmin = !!player?.is_admin;
+  const statusLabel = { registration: "Inscrições abertas", pairs_published: "Duplas sorteadas", live: "Ao vivo", finished: "Terminado" }[event.status];
+
+  const header = (
+    <div className="rise mb-2">
+      <p className="eyebrow flex items-center gap-2">
+        {event.status === "live" && <span className="live-dot" />}
+        <span className={event.status === "live" ? "text-accent" : ""}>{statusLabel}</span>
+      </p>
+      <h1 className="display mt-2 text-[40px] capitalize">{formatDate(event.date).replace(".", "")}</h1>
+    </div>
+  );
 
   if (!pairs.length) {
     return (
-      <Page title={formatDate(event.date)}>
-        <Card><p className="text-muted">As duplas ainda não foram publicadas.</p></Card>
+      <Page>
+        {header}
+        <Card className="mt-6"><p className="text-muted">As duplas ainda não foram sorteadas.</p></Card>
       </Page>
     );
   }
@@ -48,96 +65,106 @@ export default async function EncontroPage({ params }: { params: Promise<{ id: s
   const knockout = format.knockout
     .map((k) => matches.find((m) => m.knockout_id === k.id))
     .filter((m): m is MatchRow => !!m);
-  const allPlayed = matches.every((m) => m.score_a != null);
+  const played = matches.filter((m) => m.score_a != null).length;
+  const allPlayed = played === matches.length;
   const bombosPlace = pairs.length;
+  const finalOrder = [...pairs].sort((a, b) => (a.final_position ?? 99) - (b.final_position ?? 99));
+
+  const card = (m: MatchRow, tag?: string) => (
+    <MatchCard key={m.id} match={m} eventId={id} nameA={short(m.pair_a)} nameB={short(m.pair_b)}
+      peopleA={people(m.pair_a)} peopleB={people(m.pair_b)} tag={tag} canEdit={isAdmin} />
+  );
+
+  const jogos = (
+    <div>
+      {rounds.map((r) => (
+        <div key={r}>
+          <SectionTitle>Ronda {r}</SectionTitle>
+          <div className="flex flex-col gap-2">
+            {matches.filter((m) => m.stage === "group" && m.round === r)
+              .sort((a, b) => (a.group_name ?? "").localeCompare(b.group_name ?? ""))
+              .map((m) => card(m, groups.length > 1 ? `Grupo ${m.group_name}` : undefined))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  const grupos = (
+    <div>
+      {groups.map((g) => (
+        <div key={g}>
+          <SectionTitle>{groups.length > 1 ? `Grupo ${g}` : "Classificação"}</SectionTitle>
+          <div className="overflow-hidden rounded-3xl border border-line bg-card">
+            {tables[g]!.map((t, i) => (
+              <div key={t.pairId} className="flex items-center gap-3 border-t border-line px-4 py-3 first:border-t-0">
+                <span className={`display-num w-5 text-lg ${i === 0 ? "text-accent" : "text-muted"}`}>{i + 1}</span>
+                {people(t.pairId) && <PairAvatars a={people(t.pairId)![0]} b={people(t.pairId)![1]} size={30} />}
+                <span className="min-w-0 flex-1 truncate text-sm font-medium">{short(t.pairId)}{t.unresolvedTie && " ⚠︎"}</span>
+                <span className="display-num w-6 text-center text-lg">{t.wins}</span>
+                <span className="w-9 text-right text-sm text-muted tabular">{t.delta > 0 ? `+${t.delta}` : t.delta}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+      <p className="mt-3 text-center text-xs text-muted">Vitórias · diferença de jogos</p>
+    </div>
+  );
+
+  const finais = (
+    <div className="flex flex-col gap-2 pt-4">
+      {knockout.map((m) => card(m, m.label ?? undefined))}
+      {!knockout.length && <p className="text-muted">Este formato não tem eliminatórias.</p>}
+    </div>
+  );
 
   return (
-    <Page title={formatDate(event.date)}>
+    <Page>
       <LiveRefresh eventId={id} />
-      <p className="-mt-3 mb-4 text-sm text-muted">{format.label}</p>
+      {header}
+      <div className="rise mb-2 flex items-center gap-3 text-sm text-muted" style={{ "--i": 1 } as CSSProperties}>
+        <span>{format.label}</span>
+        <span className="h-1 flex-1 overflow-hidden rounded-full bg-card-2">
+          <span className="block h-full rounded-full bg-accent transition-all" style={{ width: `${(played / matches.length) * 100}%` }} />
+        </span>
+        <span className="tabular">{played}/{matches.length}</span>
+      </div>
 
       {event.status === "finished" && (
-        <Card className="mb-2">
-          <p className="text-xs uppercase tracking-wider text-muted">Classificação final</p>
-          <ol className="mt-2 space-y-1">
-            {[...pairs].sort((a, b) => (a.final_position ?? 99) - (b.final_position ?? 99)).map((p) => (
+        <section className="rise court mt-4 rounded-[28px] border border-line bg-card p-5">
+          <p className="eyebrow !text-accent">Classificação final</p>
+          <ol className="mt-3 flex flex-col gap-2.5">
+            {finalOrder.map((p) => (
               <li key={p.id} className="flex items-center gap-3">
-                <span className="tabular w-6 text-muted">{p.final_position}</span>
-                <PairAvatars a={person(p.left_player)} b={person(p.right_player)} size={26} />
-                <span>{name(p.id)}</span>
+                <span className={`display-num w-6 text-xl ${p.final_position === 1 ? "text-accent" : "text-muted"}`}>{p.final_position}</span>
+                <PairAvatars a={person(p.left_player)} b={person(p.right_player)} size={30} />
+                <span className="flex-1 text-sm font-medium">{name(p.id)}</span>
                 {p.final_position === 1 && <span>🏆</span>}
                 {p.final_position === bombosPlace && <span>🥁</span>}
               </li>
             ))}
           </ol>
-        </Card>
+        </section>
       )}
 
-      {rounds.map((r) => (
-        <div key={r}>
-          <SectionTitle>Jogo {r}</SectionTitle>
-          <div className="flex flex-col gap-2">
-            {matches.filter((m) => m.stage === "group" && m.round === r)
-              .sort((a, b) => (a.group_name ?? "").localeCompare(b.group_name ?? ""))
-              .map((m) => (
-                <MatchCard key={m.id} match={m} eventId={id} nameA={name(m.pair_a)} nameB={name(m.pair_b)}
-                  peopleA={people(m.pair_a)} peopleB={people(m.pair_b)}
-                  tag={groups.length > 1 ? `Grupo ${m.group_name}` : undefined} canEdit={isAdmin} />
-              ))}
-          </div>
-        </div>
-      ))}
-
-      {groups.map((g) => (
-        <div key={g}>
-          <SectionTitle>Classificação {groups.length > 1 ? `Grupo ${g}` : ""}</SectionTitle>
-          <Card className="!p-0">
-            <table className="tabular w-full text-sm">
-              <thead className="text-[11px] uppercase tracking-wider text-muted">
-                <tr><th className="py-2 pl-4 text-left font-medium">Dupla</th><th className="font-medium">V</th><th className="pr-4 font-medium">+/−</th></tr>
-              </thead>
-              <tbody>
-                {tables[g]!.map((t, i) => (
-                  <tr key={t.pairId} className="border-t border-line">
-                    <td className="py-2 pl-4">
-                      <span className="flex items-center gap-2">
-                        <span className="w-4 text-muted">{i + 1}</span>
-                        {people(t.pairId) && <PairAvatars a={people(t.pairId)![0]} b={people(t.pairId)![1]} size={24} />}
-                        <span>{name(t.pairId)}{t.unresolvedTie && " ⚠︎"}</span>
-                      </span>
-                    </td>
-                    <td className="text-center">{t.wins}</td>
-                    <td className="pr-4 text-center">{t.delta > 0 ? `+${t.delta}` : t.delta}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </Card>
-        </div>
-      ))}
-
-      {knockout.length > 0 && (
-        <>
-          <SectionTitle>Eliminatórias</SectionTitle>
-          <div className="flex flex-col gap-2">
-            {knockout.map((m) => (
-              <MatchCard key={m.id} match={m} eventId={id} nameA={name(m.pair_a)} nameB={name(m.pair_b)}
-                peopleA={people(m.pair_a)} peopleB={people(m.pair_b)}
-                tag={m.label ?? undefined} canEdit={isAdmin && !!m.pair_a && !!m.pair_b} />
-            ))}
-          </div>
-        </>
+      {matches.length > 0 && (
+        <Tabs tabs={[
+          { id: "jogos", label: "Jogos", content: jogos },
+          { id: "grupos", label: groups.length > 1 ? "Grupos" : "Tabela", content: grupos },
+          ...(knockout.length ? [{ id: "finais", label: "Finais", content: finais }] : []),
+        ]} />
       )}
 
       {isAdmin && event.status !== "finished" && (
-        <div className="mt-8 flex flex-col gap-2">
+        <div className="mt-10 flex flex-col gap-2">
           {groups.length === 2 && !format.id.endsWith("-direct") && (
             <form action={useDirectCross.bind(null, id)}>
               <button className={`${btnGhost} w-full`}>Sem tempo: cruzamento direto</button>
             </form>
           )}
           <form action={closeEvent.bind(null, id)}>
-            <button className={`${btnGhost} w-full`} disabled={!allPlayed}>Fechar encontro e atribuir pontos</button>
+            <button className={`${btn} w-full`} disabled={!allPlayed}>Fechar encontro e atribuir pontos</button>
           </form>
         </div>
       )}
