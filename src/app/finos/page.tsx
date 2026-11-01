@@ -3,15 +3,16 @@ import type { CSSProperties } from "react";
 import { Page, SectionTitle } from "@/components/ui";
 import { Avatar } from "@/components/Avatar";
 import { FinoPlus } from "@/components/FinoPlus";
-import { formatDate, getMe } from "@/lib/db";
+import { formatDate, getCurrentSeason, getMe } from "@/lib/db";
 
 /** A fino is 20cl. The glass fills up towards the next 100 L milestone. */
 const LITRES_PER_FINO = 0.2;
 
 export default async function FinosPage() {
   const { supabase, player } = await getMe();
+  const season = await getCurrentSeason();
   const [{ data: finos }, { data: people }] = await Promise.all([
-    supabase.from("finos").select("player_id, quantity, events(date)"),
+    supabase.from("finos").select("player_id, quantity, events(date, season_id)"),
     supabase.from("players").select("id, name, avatar_path"),
   ]);
   const personById = new Map(((people ?? []) as { id: string; name: string; avatar_path: string | null }[]).map((p) => [p.id, p]));
@@ -29,9 +30,12 @@ export default async function FinosPage() {
   const history = [...byDate.entries()].sort((a, b) => b[0].localeCompare(a[0]));
   const best = Math.max(1, ...history.map(([, n]) => n));
 
-  // Individual ranking (ties share the position)
+  // Individual ranking for the current season (ties share the position)
   const byPlayer = new Map<string, number>();
-  for (const f of finos ?? []) byPlayer.set(f.player_id, (byPlayer.get(f.player_id) ?? 0) + f.quantity);
+  for (const f of finos ?? []) {
+    if ((f.events as unknown as { season_id: string } | null)?.season_id !== season?.id) continue;
+    byPlayer.set(f.player_id, (byPlayer.get(f.player_id) ?? 0) + f.quantity);
+  }
   const drinkers = [...byPlayer.entries()]
     .filter(([id]) => personById.has(id))
     .sort((a, b) => b[1] - a[1] || personById.get(a[0])!.name.localeCompare(personById.get(b[0])!.name, "pt"));
@@ -53,7 +57,7 @@ export default async function FinosPage() {
 
       <div className="lg:grid lg:grid-cols-2 lg:gap-8">
         <div>
-      <SectionTitle>Ranking de finos</SectionTitle>
+      <SectionTitle>Ranking de finos · {season?.name ?? "temporada"}</SectionTitle>
       <ol className="flex flex-col gap-1.5">
         {drinkers.map(([id, n], i) => {
           const p = personById.get(id)!;
@@ -75,7 +79,7 @@ export default async function FinosPage() {
             </li>
           );
         })}
-        {drinkers.length === 0 && <li className="text-muted">Ainda ninguém registou finos.</li>}
+        {drinkers.length === 0 && <li className="text-muted">Ainda ninguém registou finos esta temporada.</li>}
       </ol>
         </div>
         <div>
