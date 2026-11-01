@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card, Page, SectionTitle, btnGhost, input } from "@/components/ui";
 import { formatDate, requireAdmin, type EventRow, type PlayerRow } from "@/lib/db";
+import { PLAYER_OPTIONS } from "@/lib/player-options";
 import { addFixedPair, removeFixedPair, updateEventSettings } from "../../../actions";
 import { PairingPanel } from "./PairingPanel";
 import { SidePicker } from "./SidePicker";
@@ -39,7 +40,8 @@ export default async function AdminEvent({ params }: { params: Promise<{ id: str
             players={players.map((p) => ({ id: p.id, name: p.name, side: p.side, avatar_path: p.avatar_path, is_wild_card: p.is_wild_card }))}
             initial={Object.fromEntries(registered.map((p) => [p.id, (reg.get(p.id)?.side ?? p.side) as "L" | "R"]))}
             points={Object.fromEntries((ranking ?? []).map((r) => [r.player_id as string, Number(r.points)]))}
-            initialNote={event.notes} />
+            initialNote={event.notes}
+            target={event.expected_players} />
           <p className="mt-2 text-xs text-muted">Falta alguém? Adiciona-o em Admin → Jogadores (wild cards incluídos).</p>
 
           <SectionTitle>2 · Duplas fixas</SectionTitle>
@@ -67,8 +69,8 @@ export default async function AdminEvent({ params }: { params: Promise<{ id: str
               <option value="weighted">Média ponderada</option>
               <option value="draw">Sorteio</option>
             </select>
-            <select className={input} name="courts" defaultValue={String(event.courts)}>
-              {[1, 2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n} campo{n > 1 ? "s" : ""}</option>)}
+            <select className={input} name="expected_players" defaultValue={String(event.expected_players ?? 20)}>
+              {PLAYER_OPTIONS.map((o) => <option key={o.n} value={o.n}>{o.label}</option>)}
             </select>
             <button className={`${btnGhost} col-span-2`}>Guardar</button>
           </form>

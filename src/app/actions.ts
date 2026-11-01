@@ -132,7 +132,7 @@ export async function createEvent(formData: FormData) {
     .insert({
       season_id: season.id,
       date: String(formData.get("date")),
-      courts: Number(formData.get("courts") ?? 2),
+      expected_players: Number(formData.get("expected_players") ?? 20),
       pairing_mode: String(formData.get("pairing_mode") ?? "ranking"),
     })
     .select("id")
@@ -257,7 +257,7 @@ export async function updateEventSettings(formData: FormData) {
     .from("events")
     .update({
       pairing_mode: String(formData.get("pairing_mode")),
-      courts: Number(formData.get("courts")),
+      expected_players: Number(formData.get("expected_players")),
     })
     .eq("id", eventId);
   revalidatePath(`/admin/encontros/${eventId}`);

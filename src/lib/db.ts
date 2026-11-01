@@ -32,6 +32,7 @@ export interface EventRow {
   format_id: string | null;
   pairing_mode: "ranking" | "weighted" | "draw";
   courts: number;
+  expected_players: number | null;
   counts_for_ranking: boolean;
   notes: string | null;
   pairing_log: { log: string[]; warnings: string[] } | null;

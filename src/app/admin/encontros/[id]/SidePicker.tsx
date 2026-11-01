@@ -15,11 +15,13 @@ const norm = (s: string) =>
  * tap a card to add the player on their usual side, tap a chip to swap sides,
  * paste the WhatsApp list to add everyone at once, or "+" for a new player / wild card.
  */
-export function SidePicker({ eventId, players: initialPlayers, initial, points, initialNote }: {
+export function SidePicker({ eventId, players: initialPlayers, initial, points, initialNote, target }: {
   eventId: string; players: P[]; initial: Record<string, Side>;
   /** Season ranking points, to order each column like the ranking */
   points: Record<string, number>;
   initialNote?: string | null;
+  /** Players expected this Sunday (from the encounter settings) */
+  target?: number | null;
 }) {
   const [drawn, setDrawn] = useState<Set<string>>(new Set());
   const [drawNote, setDrawNote] = useState<string | null>(initialNote ?? null);
@@ -148,6 +150,16 @@ export function SidePicker({ eventId, players: initialPlayers, initial, points, 
         {column("Esquerda", lefts)}
         {column("Direita", rights)}
       </div>
+      {target ? (
+        <div className="mt-3">
+          <div className="h-1.5 overflow-hidden rounded-full bg-card-2">
+            <div className={`h-full rounded-full transition-all ${total === target ? "bg-accent" : "bg-fg/60"}`} style={{ width: `${Math.min(100, (total / target) * 100)}%` }} />
+          </div>
+          <p className="mt-1.5 text-center text-xs text-muted">
+            {total}/{target} jogadores{total < target ? ` · faltam ${target - total}` : total > target ? ` · ${total - target} a mais` : " ✓"}
+          </p>
+        </div>
+      ) : null}
       <p className={`mt-2 text-center text-sm ${total && balanced && valid ? "text-accent" : "text-muted"}`}>
         {lefts.length} E · {rights.length} D · {total} jogadores
         {balanced && valid && ` · ${total / 2} duplas ✓`}

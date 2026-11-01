@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card, Page, SectionTitle, btn, btnGhost, input } from "@/components/ui";
 import { formatDate, requireAdmin, type EventRow } from "@/lib/db";
+import { PLAYER_OPTIONS } from "@/lib/player-options";
 import { Avatar } from "@/components/Avatar";
 import { approveSignup, createEvent, rejectSignup } from "../actions";
 
@@ -53,8 +54,8 @@ export default async function AdminPage() {
               <option value="weighted">Média ponderada</option>
               <option value="draw">Sorteio</option>
             </select>
-            <select className={input} name="courts" defaultValue="2">
-              {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n} campo{n > 1 ? "s" : ""}</option>)}
+            <select className={input} name="expected_players" defaultValue="20">
+              {PLAYER_OPTIONS.map((o) => <option key={o.n} value={o.n}>{o.label}</option>)}
             </select>
           </div>
           <button className={btn}>Criar encontro e preparar sorteio</button>
