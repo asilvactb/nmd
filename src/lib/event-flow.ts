@@ -269,7 +269,7 @@ export async function rescheduleEvent(db: SupabaseClient, eventId: string) {
   const ordered = [...ms].sort((a, b) =>
     (a.round ?? 0) - (b.round ?? 0) || (a.group_name ?? "").localeCompare(b.group_name ?? "") || a.id.localeCompare(b.id));
   const plan = scheduleMatches(
-    ordered.map((m) => ({ key: m.id, round: m.stage === "group" ? m.round ?? undefined : undefined, knockoutId: m.knockout_id ?? undefined })),
+    ordered.map((m) => ({ key: m.id, round: m.stage === "group" ? m.round ?? undefined : undefined, group: m.group_name ?? undefined, knockoutId: m.knockout_id ?? undefined })),
     format,
     event.courts || 4,
   );

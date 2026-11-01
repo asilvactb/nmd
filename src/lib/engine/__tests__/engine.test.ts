@@ -182,7 +182,7 @@ describe("court schedule", () => {
   it("10 pairs on 4 courts: 5 group jornadas, finals after their semis", () => {
     const f = formatFor(10);
     const items = [
-      ...[1, 2, 3, 4, 5].flatMap((r) => ["A", "B"].flatMap((g) => [0, 1].map((k) => ({ key: `${g}${r}${k}`, round: r })))),
+      ...[1, 2, 3, 4, 5].flatMap((r) => ["A", "B"].flatMap((g) => [0, 1].map((k) => ({ key: `${g}${r}${k}`, round: r, group: g })))),
       ...f.knockout.map((k) => ({ key: k.id, knockoutId: k.id })),
     ];
     const s = scheduleMatches(items, f, 4);
@@ -190,6 +190,9 @@ describe("court schedule", () => {
     expect(at("A10").slot).toBe(1);
     expect(at("B51").slot).toBe(5);
     expect(Math.max(...s.filter((x) => x.slot === 1).map((x) => x.court))).toBe(4);
+    // Group A on courts 1-2, group B on 3-4
+    expect(s.filter((x) => x.key.startsWith("A")).every((x) => x.court <= 2)).toBe(true);
+    expect(s.filter((x) => x.key.startsWith("B")).every((x) => x.court >= 3)).toBe(true);
     expect(at("F").slot).toBeGreaterThan(at("MF1").slot);
     expect(at("FB").slot).toBeGreaterThan(at("MB2").slot);
     for (const slot of new Set(s.map((x) => x.slot))) {
