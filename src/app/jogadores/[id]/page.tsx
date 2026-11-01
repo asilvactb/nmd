@@ -7,6 +7,7 @@ import { CountUp } from "@/components/CountUp";
 import { Medal, medalFor } from "@/components/Medal";
 import { Reveal } from "@/components/Reveal";
 import { formatDate, getCurrentSeason, getMe, type PairRow, type PlayerRow, type RankingRow } from "@/lib/db";
+import { titleIcon } from "@/lib/titles";
 
 interface AwardRow { season_name: string; award: string }
 
@@ -71,12 +72,12 @@ export default async function PlayerProfile({ params }: { params: Promise<{ id: 
               ? "conic-gradient(from 180deg, #f8e08e, #b07d24, #f8e08e, #b07d24, #f8e08e)"
               : "conic-gradient(from 180deg, var(--accent), var(--accent-2), var(--accent))" }}>
               <Avatar name={p.name} path={p.avatar_path} size={124} />
-              {p.title && <span className="absolute -top-5 left-1/2 -translate-x-1/2 -rotate-12 text-[34px] drop-shadow-lg">👑</span>}
+              {p.title && <span className="absolute -top-5 left-1/2 -translate-x-1/2 -rotate-12 text-[34px] drop-shadow-lg">{titleIcon(p.title)}</span>}
             </div>
             <h1 className="display mt-5 text-[38px]">{p.name}</h1>
             {p.title && (
               <p className="shine mx-auto mt-2 w-fit rounded-full border border-[#f8e08e]/40 bg-[#f8e08e]/10 px-3.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#f8e08e]">
-                {p.title} do NMD
+                {p.title}
               </p>
             )}
             <p className="mt-1 text-sm text-muted">

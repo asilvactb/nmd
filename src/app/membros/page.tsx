@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 import { Page } from "@/components/ui";
 import { Avatar } from "@/components/Avatar";
 import { getMe, type PlayerRow } from "@/lib/db";
+import { titleIcon, titleOrder } from "@/lib/titles";
 
 type Member = Pick<PlayerRow, "id" | "name" | "avatar_path" | "side" | "is_wild_card" | "is_admin" | "title" | "active">;
 
@@ -18,7 +19,7 @@ export default async function MembrosPage({ searchParams }: { searchParams: Prom
   const side = lado === "esquerdas" ? "L" : lado === "direitas" ? "R" : null;
   const shown = side ? all.filter((m) => m.side === side) : all;
   // Honorary titles first, then members, wild cards at the end
-  const rank = (m: Member) => (m.title ? 0 : m.is_wild_card ? 2 : 1);
+  const rank = (m: Member) => (m.title ? titleOrder(m.title) : m.is_wild_card ? 200 : 100);
   shown.sort((a, b) => rank(a) - rank(b));
 
   const tab = (label: string, value?: string) => {
@@ -42,7 +43,7 @@ export default async function MembrosPage({ searchParams }: { searchParams: Prom
         {shown.map((m, i) => (
           <Link key={m.id} href={`/jogadores/${m.id}`} style={{ "--i": Math.min(i, 18) } as CSSProperties}
             className={`rise lift relative flex flex-col items-center gap-2 rounded-3xl border bg-card px-2 pb-3 pt-4 text-center ${m.title ? "border-[#f8e08e]/40" : "border-line"}`}>
-            {m.title && <span className="absolute right-2 top-2 text-sm">👑</span>}
+            {m.title && <span className="absolute right-2 top-2 text-sm">{titleIcon(m.title)}</span>}
             <Avatar name={m.name} path={m.avatar_path} size={56} />
             <span className="w-full truncate text-[13px] font-medium">{m.name}</span>
             <span className={`text-[10px] uppercase tracking-wider ${m.title ? "text-[#f8e08e]" : "text-muted"}`}>
