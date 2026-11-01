@@ -5,6 +5,7 @@ import { Card, Page, SectionTitle, btn, btnGhost } from "@/components/ui";
 import { Logo } from "@/components/Logo";
 import { Avatar, PairAvatars } from "@/components/Avatar";
 import { CountUp } from "@/components/CountUp";
+import { FinoPlus } from "@/components/FinoPlus";
 import { Countdown } from "@/components/Countdown";
 import {
   formatDate, getCurrentSeason, getMe,
@@ -135,15 +136,14 @@ export default async function Home() {
         <Card i={1}><p className="display text-2xl">Sem encontro marcado</p><p className="mt-2 text-sm text-muted">Os admins abrem as inscrições durante a semana.</p></Card>
       )}
 
-      {/* Finos */}
-      <Link href="/finos" className="rise mt-3 block overflow-hidden rounded-3xl bg-accent p-5 text-accent-ink"
-        style={{ "--i": 2 } as CSSProperties}>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] opacity-70">Finos bebidos pelo NMD</p>
-        <div className="mt-1 flex items-end justify-between">
-          <CountUp value={totalFinos} className="display-num text-6xl" />
-          <span className="pb-2 text-sm font-semibold">{(totalFinos * 0.2).toLocaleString("pt-PT", { maximumFractionDigits: 1 })} L →</span>
-        </div>
-      </Link>
+      {/* Finos: global counter, everyone taps their own +1 */}
+      <section className="rise mt-3 rounded-3xl bg-accent p-5 text-accent-ink" style={{ "--i": 2 } as CSSProperties}>
+        <Link href="/finos" className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.14em] opacity-70">
+          <span>Finos bebidos pelo NMD</span><span>→</span>
+        </Link>
+        <div className="mt-2"><FinoPlus total={totalFinos} /></div>
+      </section>
+
       {/* My season */}
       <SectionTitle>{season?.name ?? "Temporada"}</SectionTitle>
       <div className="grid grid-cols-3 gap-2">

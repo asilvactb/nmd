@@ -41,14 +41,16 @@ export async function setJoker(eventId: string, on: boolean) {
   revalidatePath("/");
 }
 
-export async function setEventFinos(formData: FormData) {
-  const { supabase, player } = await requireAdmin();
-  const eventId = String(formData.get("event_id"));
-  const quantity = Math.max(0, Math.round(Number(formData.get("quantity") ?? 0)));
-  await supabase.from("finos").delete().eq("event_id", eventId).is("player_id", null);
-  if (quantity > 0) {
-    await supabase.from("finos").insert({ event_id: eventId, quantity, kind: "drink", created_by: player.id });
-  }
+/** Each player logs their own fino; it counts towards the group total and today's encounter. */
+export async function addFinos() {
+  const { supabase, player } = await getMe();
+  if (!player) throw new Error("Sem jogador associado.");
+  const today = new Date().toISOString().slice(0, 10);
+  const { data: ev } = await supabase
+    .from("events").select("id").lte("date", today).order("date", { ascending: false }).limit(1).maybeSingle();
+  await supabase.from("finos").insert({
+    player_id: player.id, event_id: ev?.id ?? null, quantity: 1, kind: "drink", created_by: player.id,
+  });
   revalidatePath("/finos");
   revalidatePath("/");
 }
