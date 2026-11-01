@@ -39,8 +39,9 @@ export default async function RankingPage() {
 
   return (
     <Page eyebrow={season.name} title="Ranking" action={<Link href="/hall" className={btnGhost}>Hall of Fame</Link>}>
+      <div className="lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-10">
       {podium.length === 3 && (
-        <div className="mb-8 grid grid-cols-3 items-end gap-2">
+        <div className="mb-8 grid grid-cols-3 items-end gap-2 lg:sticky lg:top-10 lg:rounded-[28px] lg:border lg:border-line lg:bg-card lg:p-6 lg:pt-12">
           {order.map((idx, k) => {
             const r = podium[idx]!;
             const h = idx === 0 ? "h-28" : idx === 1 ? "h-20" : "h-14";
@@ -53,7 +54,8 @@ export default async function RankingPage() {
                 </div>
                 <p className="mt-2 max-w-full truncate text-center text-sm font-semibold">{r.name}</p>
                 <p className="display-num text-lg text-muted">{Number(r.points).toLocaleString("pt-PT")}</p>
-                <div className={`mt-2 flex w-full items-start justify-center rounded-t-2xl ${idx === 0 ? "bg-accent text-accent-ink" : "bg-card-2"} ${h}`}>
+                <p className="text-[10px] text-muted">{r.events_played} pres · {r.wins} vit · {r.bombos} bom</p>
+                <div style={{ "--i": k } as CSSProperties} className={`grow mt-2 flex w-full items-start justify-center rounded-t-2xl ${idx === 0 ? "bg-gradient-to-b from-accent to-accent-2 text-white" : "bg-card-2"} ${h}`}>
                   <span className="display-num mt-2 text-3xl">{idx + 1}</span>
                 </div>
               </div>
@@ -62,29 +64,40 @@ export default async function RankingPage() {
         </div>
       )}
 
+      <div>
+      <div className="mb-2 flex items-center gap-3 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted">
+        <span className="w-7 text-center">#</span>
+        <span className="flex-1">Jogador</span>
+        <span className="w-7 text-center" title="Presenças">Pres</span>
+        <span className="w-7 text-center" title="Vitórias">Vit</span>
+        <span className="w-7 text-center" title="Bombos">Bom</span>
+        <span className="w-12 text-right">Pts</span>
+      </div>
       <ol className="flex flex-col gap-1.5">
-        {rows.slice(3).map((r, k) => {
-          const i = k + 3;
+        {rows.map((r, i) => {
           const now = pos[i]!;
           const prev = prevRank.get(r.player_id);
           const delta = prev ? prev - now : 0;
           const isMe = r.player_id === player?.id;
           return (
             <li key={r.player_id} className={`rise flex items-center gap-3 rounded-2xl border px-3 py-2.5 ${isMe ? "border-accent/60 bg-accent/10" : "border-line bg-card"}`}
-              style={{ "--i": Math.min(k + 4, 14) } as CSSProperties}>
-              <span className="display-num w-7 text-center text-lg text-muted">{now}</span>
-              <Avatar name={r.name} path={r.avatar_path} size={38} />
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-medium">
-                  {r.name}{r.is_wild_card && <span className="text-muted"> · wc</span>}{r.joker_used && <span className="text-accent"> ★</span>}
-                </p>
-                <p className="text-xs text-muted">
-                  {r.side === "L" ? "Esquerda" : "Direita"} · {r.events_played} enc. · {r.wins}V · {r.bombos}B
-                </p>
-              </div>
-              <span className={`w-8 text-right text-xs font-semibold ${delta > 0 ? "text-accent" : delta < 0 ? "text-danger" : "text-muted"}`}>
-                {delta > 0 ? `▲${delta}` : delta < 0 ? `▼${-delta}` : "–"}
+              style={{ "--i": Math.min(i + 4, 14) } as CSSProperties}>
+              <span className="flex w-7 flex-col items-center">
+                <span className={`display-num text-lg leading-none ${i < 3 ? "text-accent" : "text-muted"}`}>{now}</span>
+                <span className={`mt-0.5 text-[9px] font-semibold ${delta > 0 ? "text-accent" : delta < 0 ? "text-danger" : "text-transparent"}`}>
+                  {delta > 0 ? `▲${delta}` : delta < 0 ? `▼${-delta}` : "·"}
+                </span>
               </span>
+              <Avatar name={r.name} path={r.avatar_path} size={36} />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[15px] font-medium leading-tight">
+                  {r.name}{r.joker_used && <span className="text-accent"> ★</span>}
+                </p>
+                <p className="text-[11px] text-muted">{r.is_wild_card ? "Wild card · " : ""}{r.side === "L" ? "Esquerda" : "Direita"}</p>
+              </div>
+              <span className="display-num w-7 text-center text-base">{r.events_played}</span>
+              <span className={`display-num w-7 text-center text-base ${r.wins ? "text-accent" : "text-muted"}`}>{r.wins}</span>
+              <span className={`display-num w-7 text-center text-base ${r.bombos ? "" : "text-muted"}`}>{r.bombos}</span>
               <span className="display-num w-12 text-right text-xl">
                 {isMe ? <CountUp value={Number(r.points)} decimals={Number(r.points) % 1 ? 1 : 0} /> : Number(r.points).toLocaleString("pt-PT")}
               </span>
@@ -92,7 +105,9 @@ export default async function RankingPage() {
           );
         })}
       </ol>
-      <p className="mt-4 text-center text-xs text-muted">▲▼ desde o último encontro · ★ Joker usado · V vitórias · B bombos</p>
+      </div>
+      </div>
+      <p className="mt-4 text-center text-xs text-muted">Pres presenças · Vit vitórias · Bom bombos · ▲▼ desde o último encontro · ★ Joker</p>
     </Page>
   );
 }

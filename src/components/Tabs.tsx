@@ -1,12 +1,16 @@
 "use client";
 import { useState, type ReactNode } from "react";
 
-/** Sticky segmented control; panels are rendered on the server and passed in. */
+/**
+ * Phone: sticky segmented control showing one panel at a time.
+ * Desktop: every panel side by side, each with its own heading.
+ */
 export function Tabs({ tabs }: { tabs: { id: string; label: string; content: ReactNode }[] }) {
   const [active, setActive] = useState(tabs[0]?.id);
+  const cols = tabs.length === 3 ? "lg:grid-cols-3" : tabs.length === 2 ? "lg:grid-cols-2" : "";
   return (
     <div>
-      <div className="sticky top-0 z-20 -mx-4 bg-bg/90 px-4 py-3 backdrop-blur-xl" style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}>
+      <div className="sticky top-0 z-20 -mx-4 bg-bg/90 px-4 py-3 backdrop-blur-xl lg:hidden" style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}>
         <div className="flex rounded-full border border-line bg-card p-1">
           {tabs.map((t) => (
             <button key={t.id} type="button" onClick={() => setActive(t.id)}
@@ -16,9 +20,14 @@ export function Tabs({ tabs }: { tabs: { id: string; label: string; content: Rea
           ))}
         </div>
       </div>
-      {tabs.map((t) => (
-        <div key={t.id} hidden={active !== t.id}>{t.content}</div>
-      ))}
+      <div className={`lg:mt-8 lg:grid lg:items-start lg:gap-6 ${cols}`}>
+        {tabs.map((t) => (
+          <div key={t.id} className={`${active === t.id ? "block" : "hidden"} lg:block`}>
+            <h2 className="display mb-1 hidden text-2xl lg:block">{t.label}</h2>
+            {t.content}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

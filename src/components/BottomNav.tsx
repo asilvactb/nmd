@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Logo } from "./Logo";
 
 const ICONS = {
   home: "M3 11 12 4l9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z",
@@ -21,26 +22,58 @@ export function BottomNav({ isAdmin }: { isAdmin: boolean }) {
   const path = usePathname();
   if (path.startsWith("/login")) return null;
   const items = isAdmin ? [...ITEMS, { href: "/admin", label: "Admin", icon: ICONS.admin }] : ITEMS;
+  const isActive = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
+  const icon = (d: string, active: boolean, cls: string) => (
+    <svg viewBox="0 0 24 24" className={cls} fill="none" stroke="currentColor"
+      strokeWidth={active ? 2.2 : 1.7} strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
+  );
   return (
-    <nav className="fixed inset-x-0 z-30 flex justify-center px-4"
-      style={{ bottom: "calc(env(safe-area-inset-bottom) + 12px)" }}>
-      <ul className="flex w-full max-w-md items-center justify-between rounded-full border border-white/10 bg-[#1a1a1c]/85 p-1.5 shadow-2xl shadow-black/60 backdrop-blur-xl">
-        {items.map((it) => {
-          const active = it.href === "/" ? path === "/" : path.startsWith(it.href);
-          return (
-            <li key={it.href} className="flex-1">
-              <Link href={it.href}
-                className={`flex flex-col items-center gap-0.5 rounded-full py-2 text-[10px] font-medium transition-colors ${active ? "bg-accent text-accent-ink" : "text-muted"}`}>
-                <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke="currentColor"
-                  strokeWidth={active ? 2.2 : 1.7} strokeLinecap="round" strokeLinejoin="round">
-                  <path d={it.icon} />
-                </svg>
-                {it.label}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+    <>
+      {/* Phone: floating pill */}
+      <nav className="fixed inset-x-0 z-30 flex justify-center px-4 lg:hidden"
+        style={{ bottom: "calc(env(safe-area-inset-bottom) + 12px)" }}>
+        <ul className="flex w-full max-w-md items-center justify-between rounded-full border border-white/10 bg-[#15171b]/80 p-1.5 shadow-2xl shadow-black/60 backdrop-blur-xl">
+          {items.map((it) => {
+            const active = isActive(it.href);
+            return (
+              <li key={it.href} className="flex-1">
+                <Link href={it.href}
+                  className={`flex flex-col items-center gap-0.5 rounded-full py-2 text-[10px] font-medium transition-colors ${active ? "bg-fg text-bg" : "text-muted"}`}>
+                  {icon(it.icon, active, "h-[22px] w-[22px]")}
+                  {it.label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      {/* Desktop: sidebar */}
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[248px] flex-col border-r border-line bg-[#0b0c0f] px-5 py-8 lg:flex">
+        <Link href="/" className="mb-10 px-2"><Logo className="h-7" /></Link>
+        <ul className="flex flex-col gap-1">
+          {items.map((it) => {
+            const active = isActive(it.href);
+            return (
+              <li key={it.href}>
+                <Link href={it.href}
+                  className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition ${active ? "bg-card-2 text-fg" : "text-muted hover:bg-card hover:text-fg"}`}>
+                  {icon(it.icon, active, "h-5 w-5")}
+                  {it.label}
+                  {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-accent" />}
+                </Link>
+              </li>
+            );
+          })}
+          <li>
+            <Link href="/hall" className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition ${isActive("/hall") ? "bg-card-2 text-fg" : "text-muted hover:bg-card hover:text-fg"}`}>
+              {icon("M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z", isActive("/hall"), "h-5 w-5")}
+              Hall of Fame
+            </Link>
+          </li>
+        </ul>
+        <p className="mt-auto px-3 text-[11px] leading-relaxed text-muted">Nunca Mais é Domingo<br />Mesh Padel Center · Braga</p>
+      </aside>
+    </>
   );
 }

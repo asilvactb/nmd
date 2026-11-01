@@ -2,17 +2,23 @@
 @import "@fontsource-variable/archivo/wdth.css";
 @import "@fontsource-variable/inter/index.css";
 
-/* NMD — night court: near-black surfaces, chalk-white type, padel-ball lime as the only accent */
+/*
+ * NMD — night court.
+ * Ink-black surfaces, chalk-white type. Court blue is the accent; the ball colour is
+ * kept for tiny signals only (live, records). White pill buttons for primary actions.
+ */
 :root {
-  --bg: #09090a;
-  --fg: #f4f4f2;
-  --muted: #8b8b88;
-  --line: #222224;
-  --card: #141415;
-  --card-2: #1c1c1e;
-  --accent: #d6ff3d;
-  --accent-ink: #0b0d00;
-  --danger: #ff5a4e;
+  --bg: #08090b;
+  --fg: #f3f4f6;
+  --muted: #8a8f98;
+  --line: #1f2228;
+  --card: #111317;
+  --card-2: #191c21;
+  --accent: #5b8cff;      /* court blue */
+  --accent-2: #9b7bff;    /* violet, for gradients */
+  --accent-ink: #ffffff;
+  --ball: #e3fb8f;        /* padel ball, used sparingly */
+  --danger: #ff6b5e;
 }
 
 @theme inline {
@@ -23,7 +29,9 @@
   --color-card: var(--card);
   --color-card-2: var(--card-2);
   --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
   --color-accent-ink: var(--accent-ink);
+  --color-ball: var(--ball);
   --color-danger: var(--danger);
   --font-sans: "Inter Variable", -apple-system, BlinkMacSystemFont, sans-serif;
   --font-display: "Archivo Variable", "Inter Variable", sans-serif;
@@ -35,11 +43,13 @@ body {
   padding-bottom: calc(96px + env(safe-area-inset-bottom));
   overscroll-behavior-y: none;
 }
-::selection { background: var(--accent); color: var(--accent-ink); }
+@media (min-width: 1024px) {
+  body { padding-bottom: 48px; padding-left: 248px; }
+}
+::selection { background: var(--accent); color: #fff; }
 
 .tabular { font-variant-numeric: tabular-nums; }
 
-/* Wide, heavy display type for headings and numbers */
 .display {
   font-family: var(--font-display);
   font-variation-settings: "wdth" 125;
@@ -62,37 +72,85 @@ body {
   text-transform: uppercase;
   color: var(--muted);
 }
-
-/* Entrance: content rises in, staggered with style="--i: n" */
-@keyframes rise {
-  from { opacity: 0; transform: translateY(14px); }
-  to { opacity: 1; transform: none; }
+.text-gradient {
+  background: linear-gradient(100deg, #fff 10%, var(--accent) 55%, var(--accent-2) 95%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
-.rise { animation: rise 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: calc(var(--i, 0) * 60ms); }
+.outline-type {
+  -webkit-text-stroke: 1px rgb(255 255 255 / 0.08);
+  color: transparent;
+}
+
+/* ---------------------------------------------------------------- motion */
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(16px); filter: blur(4px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+.rise { animation: rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: calc(var(--i, 0) * 55ms); }
+
+/* Scroll reveal (Reveal component toggles .in) */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1); transition-delay: calc(var(--i, 0) * 60ms); }
+.reveal.in { opacity: 1; transform: none; }
+
+/* Slow moving light behind hero blocks */
+@keyframes drift {
+  0% { transform: translate(-10%, -10%) scale(1); }
+  33% { transform: translate(15%, 5%) scale(1.15); }
+  66% { transform: translate(-5%, 15%) scale(0.95); }
+  100% { transform: translate(-10%, -10%) scale(1); }
+}
+.aurora { position: absolute; inset: -40%; pointer-events: none; filter: blur(60px); opacity: 0.55; }
+.aurora::before, .aurora::after {
+  content: ""; position: absolute; width: 55%; height: 55%; border-radius: 999px;
+  animation: drift 18s ease-in-out infinite;
+}
+.aurora::before { left: 10%; top: 10%; background: radial-gradient(circle, var(--accent) 0%, transparent 65%); }
+.aurora::after { right: 5%; bottom: 5%; background: radial-gradient(circle, var(--accent-2) 0%, transparent 65%); animation-duration: 23s; animation-direction: reverse; }
+
+/* Infinite results ticker */
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.marquee { display: flex; width: max-content; animation: marquee 40s linear infinite; }
+.marquee:hover { animation-play-state: paused; }
 
 @keyframes pulse-dot {
-  0% { box-shadow: 0 0 0 0 rgb(214 255 61 / 0.7); }
-  70% { box-shadow: 0 0 0 10px rgb(214 255 61 / 0); }
-  100% { box-shadow: 0 0 0 0 rgb(214 255 61 / 0); }
+  0% { box-shadow: 0 0 0 0 rgb(227 251 143 / 0.7); }
+  70% { box-shadow: 0 0 0 10px rgb(227 251 143 / 0); }
+  100% { box-shadow: 0 0 0 0 rgb(227 251 143 / 0); }
 }
-.live-dot { width: 8px; height: 8px; border-radius: 999px; background: var(--accent); animation: pulse-dot 1.6s infinite; }
+.live-dot { width: 8px; height: 8px; border-radius: 999px; background: var(--ball); animation: pulse-dot 1.6s infinite; }
 
-@keyframes pop {
-  0% { transform: scale(1); }
-  40% { transform: scale(1.18); }
-  100% { transform: scale(1); }
-}
+@keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.18); } 100% { transform: scale(1); } }
 .pop { animation: pop 0.35s ease-out; }
 
-/* Court lines texture used behind hero blocks */
+@keyframes grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.grow { transform-origin: bottom; animation: grow 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: calc(var(--i, 0) * 120ms + 200ms); }
+
+@keyframes shine { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.shine {
+  background-image: linear-gradient(110deg, transparent 35%, rgb(255 255 255 / 0.08) 50%, transparent 65%);
+  background-size: 250% 100%;
+  animation: shine 4.5s ease-in-out infinite;
+}
+
+/* Desktop: cards lift on hover */
+@media (hover: hover) {
+  .lift { transition: transform 0.25s ease, border-color 0.25s ease, background-color 0.25s ease; }
+  .lift:hover { transform: translateY(-2px); border-color: rgb(91 140 255 / 0.45); }
+}
+
+/* Court lines texture */
 .court {
   background-image:
-    linear-gradient(to right, rgb(255 255 255 / 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(255 255 255 / 0.05) 1px, transparent 1px);
+    linear-gradient(to right, rgb(255 255 255 / 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.045) 1px, transparent 1px);
   background-size: 50% 50%;
   background-position: center;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .rise, .pop, .live-dot { animation: none; }
+  .rise, .pop, .live-dot, .grow, .marquee, .aurora::before, .aurora::after, .shine { animation: none; }
+  .reveal { opacity: 1; transform: none; transition: none; }
 }

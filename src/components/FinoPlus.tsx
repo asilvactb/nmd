@@ -37,14 +37,12 @@ export function FinoPlus({ total, mine, variant = "card" }: {
       <div className="flex items-center gap-2">
         <button onClick={() => apply(-1)} disabled={state.mine <= 0} aria-label="Retirar o meu último fino"
           className={`flex h-11 w-11 items-center justify-center rounded-full text-lg font-semibold transition active:scale-90 disabled:opacity-30 ${
-            hero ? "border border-line bg-card-2 text-fg" : "border border-accent-ink/25 text-accent-ink"}`}>
+            "border border-white/15 bg-white/5 text-fg"}`}>
           −1
         </button>
         <button onClick={() => apply(1)} aria-label="Mais um fino"
-          className={`display flex shrink-0 items-center justify-center rounded-full text-xl transition active:scale-90 ${
-            hero
-              ? "h-[84px] w-[84px] bg-accent text-accent-ink shadow-[0_0_40px_rgb(214_255_61_/_0.35)]"
-              : "h-16 w-16 bg-accent-ink text-accent"}`}>
+          className={`display flex shrink-0 items-center justify-center rounded-full bg-fg text-xl text-bg shadow-[0_0_40px_rgb(91_140_255_/_0.45)] transition hover:scale-105 active:scale-90 ${
+            hero ? "h-[84px] w-[84px]" : "h-16 w-16"}`}>
           +1
         </button>
       </div>

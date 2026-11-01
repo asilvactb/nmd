@@ -88,7 +88,7 @@ export default function LoginPage() {
 
   return (
     <main className="relative mx-auto flex min-h-[100dvh] max-w-sm flex-col justify-center overflow-hidden px-6 py-12">
-      <div className="pointer-events-none absolute left-1/2 top-[12%] h-72 w-72 -translate-x-1/2 rounded-full bg-accent/20 blur-[90px]" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[60%] overflow-hidden"><div className="aurora !opacity-70" /></div>
       <div className="court pointer-events-none absolute inset-0 opacity-60 [mask-image:radial-gradient(circle_at_50%_30%,black,transparent_70%)]" />
       <Logo className="rise relative mx-auto mb-4 w-44" />
       <p className="rise eyebrow relative mb-10 text-center" style={{ "--i": 1 } as React.CSSProperties}>Nunca Mais é Domingo</p>

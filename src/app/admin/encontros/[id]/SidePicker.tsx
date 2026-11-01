@@ -105,7 +105,8 @@ export function SidePicker({ eventId, players: initialPlayers, initial }: {
   );
 
   return (
-    <div>
+    <div className="lg:grid lg:grid-cols-[380px_1fr] lg:items-start lg:gap-6">
+      <div className="lg:sticky lg:top-6">
       <div className="grid grid-cols-2 gap-2">
         {column("Esquerda", lefts)}
         {column("Direita", rights)}
@@ -127,7 +128,7 @@ export function SidePicker({ eventId, players: initialPlayers, initial }: {
               placeholder={"1. Moura\n2. Zé Vieira\n3. Caniço…"}
               className="w-full rounded-2xl border border-line bg-bg px-3 py-2.5 text-sm outline-none focus:border-accent" />
             <button onClick={addFromPaste} disabled={!paste.trim()}
-              className="mt-2 w-full rounded-full bg-accent py-3 text-sm font-semibold text-accent-ink disabled:opacity-40">
+              className="mt-2 w-full rounded-full bg-fg py-3 text-sm font-semibold text-bg disabled:opacity-40">
               Adicionar todos
             </button>
           </div>
@@ -145,10 +146,12 @@ export function SidePicker({ eventId, players: initialPlayers, initial }: {
         )}
       </div>
 
+      </div>
+      <div>
       {/* Everyone as cards */}
       <input className="mt-4 w-full rounded-2xl border border-line bg-card px-4 py-3 text-base outline-none focus:border-accent"
         placeholder="Procurar…" value={q} onChange={(e) => setQ(e.target.value)} />
-      <div className="mt-3 grid grid-cols-3 gap-2">
+      <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
         <button onClick={() => setAdding(true)}
           className="flex aspect-[4/5] flex-col items-center justify-center gap-1.5 rounded-3xl border border-dashed border-accent/60 text-accent active:scale-95">
           <span className="display text-3xl">+</span>
@@ -156,7 +159,7 @@ export function SidePicker({ eventId, players: initialPlayers, initial }: {
         </button>
         {shown.map((p) => (
           <button key={p.id} onClick={() => put(p.id, p.side)}
-            className="flex aspect-[4/5] flex-col items-center justify-center gap-2 rounded-3xl border border-line bg-card px-1.5 active:scale-95 active:border-accent">
+            className="lift flex aspect-[4/5] flex-col items-center justify-center gap-2 rounded-3xl border border-line bg-card px-1.5 active:scale-95 active:border-accent">
             <Avatar name={p.name} path={p.avatar_path} size={48} />
             <span className="w-full truncate text-center text-xs font-medium">{p.name}</span>
             <span className="text-[10px] uppercase tracking-wider text-muted">{p.is_wild_card ? "wc · " : ""}{p.side === "L" ? "esq" : "dir"}</span>
@@ -164,10 +167,11 @@ export function SidePicker({ eventId, players: initialPlayers, initial }: {
         ))}
       </div>
 
+      </div>
       {/* New player / wild card */}
       {adding && (
-        <div className="fixed inset-0 z-40 flex items-end bg-black/60 backdrop-blur-sm" onClick={() => setAdding(false)}>
-          <div className="w-full rounded-t-[28px] border-t border-line bg-card p-5 pb-[calc(env(safe-area-inset-bottom)+20px)]" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/60 backdrop-blur-sm lg:items-center" onClick={() => setAdding(false)}>
+          <div className="w-full rounded-t-[28px] border-t border-line bg-card p-5 pb-[calc(env(safe-area-inset-bottom)+20px)] lg:max-w-md lg:rounded-[28px] lg:border" onClick={(e) => e.stopPropagation()}>
             <p className="display text-2xl">Novo jogador</p>
             <input autoFocus value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Nome"
               className="mt-4 w-full rounded-2xl border border-line bg-bg px-4 py-3.5 text-base outline-none focus:border-accent" />
@@ -182,7 +186,7 @@ export function SidePicker({ eventId, players: initialPlayers, initial }: {
             <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={newWc} onChange={(e) => setNewWc(e.target.checked)} /> Wild card (convidado)</label>
             {msg && <p className="mt-2 text-sm text-danger">{msg}</p>}
             <button onClick={createPlayer} disabled={!newName.trim()}
-              className="mt-4 w-full rounded-full bg-accent py-3.5 font-semibold text-accent-ink disabled:opacity-40">Adicionar ao domingo</button>
+              className="mt-4 w-full rounded-full bg-fg py-3.5 font-semibold text-bg disabled:opacity-40">Adicionar ao domingo</button>
           </div>
         </div>
       )}

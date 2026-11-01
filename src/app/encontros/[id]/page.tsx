@@ -72,7 +72,7 @@ export default async function EncontroPage({ params }: { params: Promise<{ id: s
 
   const card = (m: MatchRow, tag?: string) => (
     <MatchCard key={m.id} match={m} eventId={id} nameA={short(m.pair_a)} nameB={short(m.pair_b)}
-      peopleA={people(m.pair_a)} peopleB={people(m.pair_b)} tag={tag} canEdit={isAdmin} />
+      peopleA={people(m.pair_a)} peopleB={people(m.pair_b)} tag={tag} canEdit={isAdmin && event.status !== "finished"} />
   );
 
   const jogos = (
