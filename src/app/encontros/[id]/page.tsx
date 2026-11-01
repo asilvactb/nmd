@@ -5,6 +5,7 @@ import { PairAvatars } from "@/components/Avatar";
 import { Tabs } from "@/components/Tabs";
 import { formatDate, getMe, pairName, type EventRow, type MatchRow, type PairRow, type PlayerRow } from "@/lib/db";
 import { eventFormat, tournamentState } from "@/lib/event-flow";
+import { finalPlaces } from "@/lib/engine/tournament";
 import { closeEvent, useDirectCross } from "../../actions";
 import { LiveRefresh } from "./LiveRefresh";
 import { MatchCard } from "./MatchCard";
@@ -60,7 +61,7 @@ export default async function EncontroPage({ params }: { params: Promise<{ id: s
   }
 
   const format = eventFormat(event, pairs.length);
-  const { tables } = tournamentState(format, pairs, matches);
+  const { tables, groupOrder, knockoutResults } = tournamentState(format, pairs, matches);
   const groups = Object.keys(format.groups);
   const rounds = [...new Set(matches.filter((m) => m.stage === "group").map((m) => m.round!))].sort((a, b) => a - b);
   const knockout = format.knockout
@@ -68,12 +69,15 @@ export default async function EncontroPage({ params }: { params: Promise<{ id: s
     .filter((m): m is MatchRow => !!m);
   const played = matches.filter((m) => m.score_a != null).length;
   const allPlayed = played === matches.length;
+  // Classification games left empty were not played: the pairs share the places
+  const canClose = finalPlaces(format, groupOrder, knockoutResults).size === pairs.length;
+  const unplayed = matches.length - played;
   const bombosPlace = pairs.length;
   const finalOrder = [...pairs].sort((a, b) => (a.final_position ?? 99) - (b.final_position ?? 99));
 
   const card = (m: MatchRow, tag?: string) => (
     <MatchCard key={m.id} match={m} eventId={id} nameA={short(m.pair_a)} nameB={short(m.pair_b)}
-      peopleA={people(m.pair_a)} peopleB={people(m.pair_b)} tag={tag} canEdit={isAdmin && event.status !== "finished"} />
+      peopleA={people(m.pair_a)} peopleB={people(m.pair_b)} tag={tag} canEdit={isAdmin && event.status !== "finished"} finished={event.status === "finished"} />
   );
 
   // With a court schedule, games are shown in playing order: jornada by jornada, with the court
@@ -201,7 +205,12 @@ export default async function EncontroPage({ params }: { params: Promise<{ id: s
             </form>
           )}
           <form action={closeEvent.bind(null, id)}>
-            <button className={`${btn} w-full`} disabled={!allPlayed}>Fechar encontro e atribuir pontos</button>
+            <button className={`${btn} w-full`} disabled={!canClose}>Fechar encontro e atribuir pontos</button>
+            {canClose && !allPlayed && (
+              <p className="mt-2 text-center text-xs text-muted">
+                {unplayed === 1 ? "1 jogo sem resultado conta" : `${unplayed} jogos sem resultado contam`} como não jogado{unplayed === 1 ? "" : "s"}: as duplas dividem os lugares.
+              </p>
+            )}
           </form>
         </div>
       )}

@@ -8,9 +8,9 @@ type Person = { name: string; path: string | null };
 /** One set starting 1-1, tie-break at 5-5: the loser ends on 1-5 (6-5 = tie-break). */
 const LOSER_SCORES = [1, 2, 3, 4, 5];
 
-export function MatchCard({ match, eventId, nameA, nameB, peopleA, peopleB, tag, canEdit }: {
+export function MatchCard({ match, eventId, nameA, nameB, peopleA, peopleB, tag, canEdit, finished = false }: {
   match: MatchRow; eventId: string; nameA: string; nameB: string;
-  peopleA?: [Person, Person]; peopleB?: [Person, Person]; tag?: string; canEdit: boolean;
+  peopleA?: [Person, Person]; peopleB?: [Person, Person]; tag?: string; canEdit: boolean; finished?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [winner, setWinner] = useState<"a" | "b" | null>(null);
@@ -49,6 +49,7 @@ export function MatchCard({ match, eventId, nameA, nameB, peopleA, peopleB, tag,
           </button>
         )}
         {played && !canEdit && <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">Final</span>}
+        {!played && !tbd && finished && <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">Não jogado</span>}
       </div>
       <button type="button" className="block w-full text-left" disabled={!canEdit || tbd} onClick={() => setOpen((o) => !o)}>
         {side(nameA, peopleA, match.score_a, aWon)}

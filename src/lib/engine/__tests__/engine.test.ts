@@ -156,6 +156,24 @@ describe("tournament", () => {
     expect(places.get("a5")).toBe(10); // bombos
   });
 
+  it("10 pairs: an unplayed classification game makes both pairs share its places", () => {
+    const f = formatFor(10);
+    const groupOrder = { A: ["a1", "a2", "a3", "a4", "a5"], B: ["b1", "b2", "b3", "b4", "b5"] };
+    const ko = {
+      P5: { winner: "a3", loser: "b3" },
+      MF1: { winner: "a1", loser: "b2" }, MF2: { winner: "b1", loser: "a2" },
+      MB1: { winner: "a4", loser: "b5" }, MB2: { winner: "b4", loser: "a5" },
+      F: { winner: "a1", loser: "b1" }, FB: { winner: "b5", loser: "a5" },
+    }; // P3 and P7 not played
+    const places = finalPlaces(f, groupOrder, ko);
+    expect(places.size).toBe(10);
+    expect([places.get("a2"), places.get("b2")]).toEqual([3, 3]);
+    expect([places.get("a4"), places.get("b4")]).toEqual([7, 7]);
+    expect(places.get("a3")).toBe(5);
+    const pts = placementPoints(10, [...places].map(([id, position]) => ({ players: [id, id] as [string, string], position })));
+    expect(pts[[...places.keys()].indexOf("a2")]).toBe(7.5);
+  });
+
   it("direct cross variant: 1st v 1st ... last v last", () => {
     const f = directCrossFormat(formatFor(8));
     expect(f.knockout.map((k) => k.places)).toEqual([[1, 2], [3, 4], [5, 6], [7, 8]]);

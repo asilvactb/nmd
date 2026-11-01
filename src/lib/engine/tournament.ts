@@ -307,6 +307,15 @@ export function finalPlaces(
     places.set(r.winner, m.places[0]);
     places.set(r.loser, m.places[1]);
   }
+  // A classification game left without a score was not played: both pairs share its places
+  for (const m of format.knockout) {
+    if (!m.places || knockoutResults[m.id]) continue;
+    const a = resolveSlot(m.a, groupOrder, knockoutResults);
+    const b = resolveSlot(m.b, groupOrder, knockoutResults);
+    if (!a || !b) continue;
+    if (!places.has(a)) places.set(a, m.places[0]);
+    if (!places.has(b)) places.set(b, m.places[0]);
+  }
   if (format.groupPlaces) {
     for (const [pos, place] of Object.entries(format.groupPlaces)) {
       for (const order of Object.values(groupOrder)) {
