@@ -2,6 +2,7 @@
 const TITLES: { match: RegExp; icon: string; order: number }[] = [
   { match: /\bddt\b/i, icon: "🎖️", order: 0 }, // the most important member
   { match: /presidente/i, icon: "👑", order: 1 },
+  { match: /\bcfo\b/i, icon: "💼", order: 2 },
 ];
 
 export function titleIcon(title: string | null | undefined): string | null {
