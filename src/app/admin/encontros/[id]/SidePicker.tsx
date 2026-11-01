@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState, useTransition } from "react";
 import { Avatar } from "@/components/Avatar";
-import { adminQuickPlayer, adminSetSide } from "../../../actions";
+import { adminDrawSides, adminQuickPlayer, adminSetSide } from "../../../actions";
 
 type P = { id: string; name: string; side: "L" | "R"; avatar_path: string | null; is_wild_card: boolean };
 type Side = "L" | "R";
@@ -15,9 +15,15 @@ const norm = (s: string) =>
  * tap a card to add the player on their usual side, tap a chip to swap sides,
  * paste the WhatsApp list to add everyone at once, or "+" for a new player / wild card.
  */
-export function SidePicker({ eventId, players: initialPlayers, initial }: {
+export function SidePicker({ eventId, players: initialPlayers, initial, points, initialNote }: {
   eventId: string; players: P[]; initial: Record<string, Side>;
+  /** Season ranking points, to order each column like the ranking */
+  points: Record<string, number>;
+  initialNote?: string | null;
 }) {
+  const [drawn, setDrawn] = useState<Set<string>>(new Set());
+  const [drawNote, setDrawNote] = useState<string | null>(initialNote ?? null);
+  const [drawing, setDrawing] = useState(false);
   const [players, setPlayers] = useState(initialPlayers);
   const [sel, setSel] = useState(initial);
   const [q, setQ] = useState("");
@@ -75,8 +81,32 @@ export function SidePicker({ eventId, players: initialPlayers, initial }: {
     });
   }
 
-  const lefts = players.filter((p) => sel[p.id] === "L");
-  const rights = players.filter((p) => sel[p.id] === "R");
+  // Columns follow the ranking order (best first)
+  const byRank = (a: P, b: P) => (points[b.id] ?? 0) - (points[a.id] ?? 0) || a.name.localeCompare(b.name, "pt");
+  const lefts = players.filter((p) => sel[p.id] === "L").sort(byRank);
+  const rights = players.filter((p) => sel[p.id] === "R").sort(byRank);
+  const extra = Math.abs(lefts.length - rights.length);
+  const bigSide = lefts.length > rights.length ? "esquerda" : "direita";
+  const otherSide = lefts.length > rights.length ? "direita" : "esquerda";
+
+  function drawSides() {
+    setDrawing(true);
+    setMsg(null);
+    start(async () => {
+      const r = await adminDrawSides(eventId);
+      if (r.error) { setMsg(r.error); setDrawing(false); return; }
+      // Let the dice roll for a moment before revealing
+      await new Promise((ok) => setTimeout(ok, 900));
+      setSel((s) => {
+        const c = { ...s };
+        for (const m of r.moved) c[m.id] = r.to!;
+        return c;
+      });
+      setDrawn(new Set(r.moved.map((m) => m.id)));
+      setDrawNote(r.note ?? null);
+      setDrawing(false);
+    });
+  }
   const total = lefts.length + rights.length;
   const balanced = lefts.length === rights.length;
   const valid = VALID.includes(total);
@@ -85,6 +115,11 @@ export function SidePicker({ eventId, players: initialPlayers, initial }: {
     [players, sel, q],
   );
 
+  const rankOf = (id: string) => {
+    const sorted = Object.entries(points).sort((a, b) => b[1] - a[1]);
+    const i = sorted.findIndex(([k]) => k === id);
+    return i >= 0 ? sorted.findIndex(([, v]) => v === sorted[i]![1]) + 1 : null;
+  };
   const column = (title: string, ps: P[]) => (
     <div className="min-h-[132px] rounded-3xl border border-line bg-card p-3">
       <p className="eyebrow mb-2 flex justify-between"><span>{title}</span><span className="display-num text-lg text-fg">{ps.length}</span></p>
@@ -92,8 +127,10 @@ export function SidePicker({ eventId, players: initialPlayers, initial }: {
         {ps.map((p) => (
           <div key={p.id} className="flex items-center gap-1.5 rounded-full bg-card-2 py-0.5 pl-0.5 pr-1">
             <button onClick={() => put(p.id, sel[p.id] === "L" ? "R" : "L")} className="flex min-w-0 flex-1 items-center gap-1.5 text-left text-xs" title="Trocar de lado">
+              <span className="w-5 shrink-0 text-center text-[10px] text-muted tabular">{rankOf(p.id) ?? "–"}</span>
               <Avatar name={p.name} path={p.avatar_path} size={24} />
               <span className="truncate">{p.name}</span>
+              {drawn.has(p.id) && <span className="pop rounded-full bg-accent px-1.5 text-[9px] font-semibold text-white">🎲</span>}
               <span className="text-muted">⇄</span>
             </button>
             <button onClick={() => put(p.id, null)} className="px-1.5 text-muted" aria-label={`Tirar ${p.name}`}>✕</button>
@@ -112,10 +149,34 @@ export function SidePicker({ eventId, players: initialPlayers, initial }: {
         {column("Direita", rights)}
       </div>
       <p className={`mt-2 text-center text-sm ${total && balanced && valid ? "text-accent" : "text-muted"}`}>
-        {total} jogadores · {Math.floor(total / 2)} duplas
-        {!balanced && ` · ${Math.abs(lefts.length - rights.length)} a mais na ${lefts.length > rights.length ? "esquerda" : "direita"} (toca para trocar)`}
+        {lefts.length} E · {rights.length} D · {total} jogadores
+        {balanced && valid && ` · ${total / 2} duplas ✓`}
         {balanced && !valid && total > 0 && " · precisa de 8, 12, 16, 20 ou 24"}
       </p>
+
+      {!balanced && total > 0 && (
+        <div className="mt-3 rounded-3xl border border-accent/40 bg-accent/10 p-4">
+          {extra % 2 === 0 ? (
+            <>
+              <p className="text-sm">
+                <b>{lefts.length}–{rights.length}</b>: há <b>{extra}</b> a mais na {bigSide}.
+                Sorteia-se <b>{extra / 2}</b> {bigSide === "direita" ? (extra / 2 > 1 ? "direitas" : "direita") : (extra / 2 > 1 ? "esquerdas" : "esquerda")} para jogar{extra / 2 > 1 ? "em" : ""} na {otherSide}.
+              </p>
+              <button onClick={drawSides} disabled={drawing}
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-fg py-3 text-sm font-semibold text-bg transition active:scale-[0.97] disabled:opacity-60">
+                <span className={drawing ? "inline-block animate-spin" : ""}>🎲</span>
+                {drawing ? "A sortear…" : `Sortear ${extra / 2} para a ${otherSide}`}
+              </button>
+            </>
+          ) : (
+            <p className="text-sm">{lefts.length}–{rights.length}: número ímpar de jogadores. Falta um jogador (ou wild card) para fechar as duplas.</p>
+          )}
+        </div>
+      )}
+      {drawNote && (
+        <p className="mt-3 rounded-2xl border border-line bg-card px-4 py-3 text-xs text-muted">🎲 {drawNote}</p>
+      )}
+      {msg && <p className="mt-2 text-center text-sm text-danger">{msg}</p>}
 
       {/* Paste from WhatsApp */}
       <div className="mt-4 rounded-3xl border border-line bg-card p-3">

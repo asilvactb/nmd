@@ -17,6 +17,9 @@ export default async function AdminEvent({ params }: { params: Promise<{ id: str
     supabase.from("registrations").select("*").eq("event_id", id),
     supabase.from("fixed_pair_requests").select("*").eq("event_id", id),
   ]);
+  const { data: ranking } = event
+    ? await supabase.from("season_ranking").select("player_id, points").eq("season_id", event.season_id)
+    : { data: [] };
   if (!event) return null;
 
   const players = (playersData ?? []) as PlayerRow[];
@@ -34,7 +37,9 @@ export default async function AdminEvent({ params }: { params: Promise<{ id: str
           <SectionTitle>1 · Quem joga e de que lado</SectionTitle>
           <SidePicker eventId={id}
             players={players.map((p) => ({ id: p.id, name: p.name, side: p.side, avatar_path: p.avatar_path, is_wild_card: p.is_wild_card }))}
-            initial={Object.fromEntries(registered.map((p) => [p.id, (reg.get(p.id)?.side ?? p.side) as "L" | "R"]))} />
+            initial={Object.fromEntries(registered.map((p) => [p.id, (reg.get(p.id)?.side ?? p.side) as "L" | "R"]))}
+            points={Object.fromEntries((ranking ?? []).map((r) => [r.player_id as string, Number(r.points)]))}
+            initialNote={event.notes} />
           <p className="mt-2 text-xs text-muted">Falta alguém? Adiciona-o em Admin → Jogadores (wild cards incluídos).</p>
 
           <SectionTitle>2 · Duplas fixas</SectionTitle>

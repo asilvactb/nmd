@@ -167,7 +167,7 @@ export async function savePairsAndFixtures(db: SupabaseClient, eventId: string, 
     .update({
       status: "pairs_published",
       format_id: format.id,
-      pairing_log: { log: result.log, warnings: result.warnings },
+      pairing_log: { log: [...(event.notes ? [event.notes] : []), ...result.log], warnings: result.warnings },
     })
     .eq("id", eventId);
 }

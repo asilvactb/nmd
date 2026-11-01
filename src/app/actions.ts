@@ -123,6 +123,37 @@ export async function adminSetSide(eventId: string, playerId: string, side: "L" 
   revalidatePath(`/admin/encontros/${eventId}`);
 }
 
+/**
+ * Side balance by draw (Regulamento 5.e, as the group does it): when one side has more
+ * players, draw at random who from the bigger side moves to the other one.
+ * Uses crypto randomness and records the result on the event for transparency.
+ */
+export async function adminDrawSides(eventId: string) {
+  const { supabase } = await requireAdmin();
+  const { randomInt } = await import("node:crypto");
+  const { data: regs } = await supabase.from("registrations").select("player_id, side, players(name, side)").eq("event_id", eventId);
+  const rows = (regs ?? []).map((r) => {
+    const p = r.players as unknown as { name: string; side: "L" | "R" };
+    return { id: r.player_id as string, name: p.name, side: ((r.side as "L" | "R" | null) ?? p.side) };
+  });
+  const L = rows.filter((r) => r.side === "L");
+  const R = rows.filter((r) => r.side === "R");
+  const diff = Math.abs(L.length - R.length);
+  if (diff === 0) return { error: "Os lados já estão equilibrados.", moved: [] as { id: string; name: string }[] };
+  if (diff % 2) return { error: "Número ímpar de jogadores: falta um para equilibrar.", moved: [] as { id: string; name: string }[] };
+  const [big, to] = L.length > R.length ? [L, "R" as const] : [R, "L" as const];
+  const pool = [...big];
+  const moved: { id: string; name: string }[] = [];
+  for (let k = 0; k < diff / 2; k++) moved.push(pool.splice(randomInt(0, pool.length), 1)[0]!);
+  for (const m of moved) {
+    await supabase.from("registrations").update({ side: to }).eq("event_id", eventId).eq("player_id", m.id);
+  }
+  const note = `Sorteio de lados: ${moved.map((m) => m.name).join(", ")} ${moved.length > 1 ? "passaram" : "passou"} para a ${to === "L" ? "esquerda" : "direita"} (sorteados entre ${big.length} ${to === "L" ? "direitas" : "esquerdas"}).`;
+  await supabase.from("events").update({ notes: note }).eq("id", eventId);
+  revalidatePath(`/admin/encontros/${eventId}`);
+  return { error: null, moved, to, note };
+}
+
 /** Draw setup: create a new player (or wild card) on the spot and put them in this Sunday. */
 export async function adminQuickPlayer(eventId: string, name: string, side: "L" | "R", isWildCard: boolean) {
   const { supabase } = await requireAdmin();
